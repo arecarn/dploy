@@ -4,7 +4,14 @@ commands
 """
 
 from collections import defaultdict
+from collections import OrderedDict
 from dploy import utils
+
+
+class DefaultListOrderedDict(OrderedDict):
+    def __missing__(self, k):
+        self[k] = []
+        return self[k]
 
 
 class Actions():
@@ -14,6 +21,7 @@ class Actions():
 
     def __init__(self, is_silent, is_dry_run):
         self.actions = []
+        self.actions_map = DefaultListOrderedDict()
         self.is_silent = is_silent
         self.is_dry_run = is_dry_run
 
@@ -22,11 +30,13 @@ class Actions():
         Adds an action
         """
         self.actions.append(action)
+        self.actions_map[action.dest].append(action)
 
     def execute(self):
         """
         Prints and executes actions
         """
+        # print(self.actions_map)
         for action in self.actions:
             if not self.is_silent:
                 print(action)
@@ -158,6 +168,7 @@ class UnLink(AbstractBaseAction):
     def __init__(self, subcmd, target):
         super().__init__()
         self.target = target
+        self.dest = target
         self.subcmd = subcmd
 
     def execute(self):
@@ -182,6 +193,7 @@ class MakeDirectory(AbstractBaseAction):
     def __init__(self, subcmd, target):
         super().__init__()
         self.target = target
+        self.dest = target
         self.subcmd = subcmd
 
     def execute(self):
@@ -201,6 +213,7 @@ class RemoveDirectory(AbstractBaseAction):
     def __init__(self, subcmd, target):
         super().__init__()
         self.target = target
+        self.dest = target
         self.subcmd = subcmd
 
     def execute(self):

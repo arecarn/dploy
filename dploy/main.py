@@ -35,6 +35,7 @@ class Input():
         return is_input_valid
 
     def _is_there_duplicate_sources(self, sources):
+        # TODO should this be checked or should we just use a set()
         """
         Checks sources to see if there are any duplicates
         """
