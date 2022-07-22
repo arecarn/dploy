@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dploy"
-version = "0.1.3-beta"
+version = "0.1.3"
 description = "Provides functionality similar to GNU Stow as a cross platform CLI tool and Python 3 module"
 license = "MIT"
 authors = ["Ryan Carney <arecarn@gmail.com>"]
