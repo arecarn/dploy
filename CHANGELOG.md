@@ -14,9 +14,25 @@ organized by order of importance.
 
 ### Fixed
 
-- Fixed pytest.
-
 ### Removed
+
+## [0.1.3] - 2022-07-22
+
+### Added
+
+- Added a `dploy clean` subcommand.
+
+### Changed
+
+- Switch to Poetry for packaging instead of setuptools.
+- Require at least python >= 3.7.2.
+- Use black for auto formatting instead of yapf.
+- Use custom *DployError* exceptions.
+
+### Fixed
+
+- Print syntax help if no valid subcommand was provided.
+- Fixed pytest.
 
 ## [0.1.2] - 2017-10-26
 
