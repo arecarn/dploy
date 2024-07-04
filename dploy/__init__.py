@@ -20,11 +20,12 @@ def stow(
     is_silent: bool = True,
     is_dry_run: bool = False,
     ignore_patterns: list[str] | None = None,
+    dotfiles: bool = False,
 ) -> None:
     """
     sub command stow
     """
-    stowcmd.Stow(sources, dest, is_silent, is_dry_run, ignore_patterns)
+    stowcmd.Stow(sources, dest, is_silent, is_dry_run, ignore_patterns, dotfiles)
 
 
 def unstow(
@@ -33,11 +34,12 @@ def unstow(
     is_silent: bool = True,
     is_dry_run: bool = False,
     ignore_patterns: list[str] | None = None,
+    dotfiles: bool = False,
 ) -> None:
     """
     sub command unstow
     """
-    stowcmd.UnStow(sources, dest, is_silent, is_dry_run, ignore_patterns)
+    stowcmd.UnStow(sources, dest, is_silent, is_dry_run, ignore_patterns, dotfiles)
 
 
 def clean(

@@ -29,9 +29,12 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
         is_silent: bool,
         is_dry_run: bool,
         ignore_patterns: list[str] | None,
+        dotfiles: bool = False,
     ) -> None:
         self.is_unfolding = False
-        super().__init__(subcmd, source, dest, is_silent, is_dry_run, ignore_patterns)
+        super().__init__(
+            subcmd, source, dest, is_silent, is_dry_run, ignore_patterns, dotfiles
+        )
 
     def _is_valid_input(self, sources: Sequence[Path], dest: Path) -> bool:
         """
@@ -112,7 +115,10 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
                 self.ignore.ignore(subsources)
                 continue
 
-            dest_path = dest / pathlib.Path(subsources.name)
+            dest_name = subsources.name
+            if self.dotfiles and dest_name.startswith("dot-"):
+                dest_name = dest_name.replace("dot-", ".", 1)
+            dest_path = dest / pathlib.Path(dest_name)
 
             does_dest_path_exist = False
             try:
@@ -145,8 +151,11 @@ class Stow(AbstractBaseStow):
         is_silent: bool = True,
         is_dry_run: bool = False,
         ignore_patterns: list[str] | None = None,
+        dotfiles: bool = False,
     ) -> None:
-        super().__init__("stow", source, dest, is_silent, is_dry_run, ignore_patterns)
+        super().__init__(
+            "stow", source, dest, is_silent, is_dry_run, ignore_patterns, dotfiles
+        )
 
     def _unfold(self, source: Path, dest: Path) -> None:
         """
@@ -240,8 +249,11 @@ class UnStow(AbstractBaseStow):
         is_silent: bool = True,
         is_dry_run: bool = False,
         ignore_patterns: list[str] | None = None,
+        dotfiles: bool = False,
     ) -> None:
-        super().__init__("unstow", source, dest, is_silent, is_dry_run, ignore_patterns)
+        super().__init__(
+            "unstow", source, dest, is_silent, is_dry_run, ignore_patterns, dotfiles
+        )
 
     def _are_same_file(self, source: Path, dest: Path) -> None:
         """
@@ -402,7 +414,15 @@ class Clean(main.AbstractBaseSubCommand):
         self.source = [pathlib.Path(s) for s in source]
         self.dest = pathlib.Path(dest)
         self.ignore_patterns = ignore_patterns
-        super().__init__("clean", source, dest, is_silent, is_dry_run, ignore_patterns)
+        super().__init__(
+            "clean",
+            source,
+            dest,
+            is_silent,
+            is_dry_run,
+            ignore_patterns,
+            dotfiles=False,
+        )
 
     def _is_valid_input(self, sources: Sequence[Path], dest: Path) -> bool:
         """

@@ -54,6 +54,12 @@ def create_parser() -> argparse.ArgumentParser:
     stow_parser = sub_parsers.add_parser("stow")
     stow_parser.add_argument("source", nargs="+", help="source directory to stow")
     stow_parser.add_argument("dest", help="destination path to stow into")
+    stow_parser.add_argument(
+        "--dotfiles",
+        dest="dotfiles",
+        action="store_true",
+        help="Treating a source file or folder named 'dot-prefix-something' is equivalent to a destination file or folder named '.prefix-something'",
+    )
     add_ignore_argument(stow_parser)
 
     unstow_parser = sub_parsers.add_parser("unstow")
@@ -61,6 +67,12 @@ def create_parser() -> argparse.ArgumentParser:
         "source", nargs="+", help="source directory to unstow from"
     )
     unstow_parser.add_argument("dest", help="destination path to unstow")
+    unstow_parser.add_argument(
+        "--dotfiles",
+        dest="dotfiles",
+        action="store_true",
+        help="Treating a source file or folder named 'dot-prefix-something' is equivalent to a destination file or folder named '.prefix-something'",
+    )
     add_ignore_argument(unstow_parser)
 
     clean_parser = sub_parsers.add_parser("clean")
@@ -104,13 +116,23 @@ def run(arguments: Sequence[str] | None = None) -> None:
             sys.exit(0)
 
         try:
-            subcmd(
-                args.source,
-                args.dest,
-                is_silent=args.is_silent,
-                is_dry_run=args.is_dry_run,
-                ignore_patterns=args.ignore_patterns,
-            )
+            if args.subcmd in ["stow", "unstow"]:
+                subcmd(
+                    args.source,
+                    args.dest,
+                    is_silent=args.is_silent,
+                    is_dry_run=args.is_dry_run,
+                    ignore_patterns=args.ignore_patterns,
+                    dotfiles=args.dotfiles,
+                )
+            else:
+                subcmd(
+                    args.source,
+                    args.dest,
+                    is_silent=args.is_silent,
+                    is_dry_run=args.is_dry_run,
+                    ignore_patterns=args.ignore_patterns,
+                )
         except DployError:
             sys.exit(1)
 

@@ -82,6 +82,7 @@ class AbstractBaseSubCommand:
         is_silent: bool,
         is_dry_run: bool,
         ignore_patterns: list[str] | None,
+        dotfiles: bool = False,
     ) -> None:
         self.subcmd = subcmd
 
@@ -90,6 +91,7 @@ class AbstractBaseSubCommand:
 
         self.is_silent = is_silent
         self.is_dry_run = is_dry_run
+        self.dotfiles = dotfiles
 
         self.dest_input = pathlib.Path(dest)
         source_inputs = [pathlib.Path(source) for source in sources]
