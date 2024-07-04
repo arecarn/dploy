@@ -93,3 +93,58 @@ def test_cli_with_version_option(capsys: Any) -> None:
         dploy.cli.run(args)
         out, _ = capsys.readouterr()
         assert re.match(r"dploy \d+.\d+\.\d+(-\w+)?\n", out) is not None
+
+
+def test_cli_stow_with_dotfiles_option(
+    source_with_dotfiles, dest_with_dotfiles, capsys
+):
+    args = ["stow", "--dotfiles", source_with_dotfiles, dest_with_dotfiles]
+    dploy.cli.run(args)
+    assert os.readlink(os.path.join(dest_with_dotfiles, "aaa")) == os.path.join(
+        "..", "source_with_dotfiles", "aaa"
+    )
+    assert os.readlink(os.path.join(dest_with_dotfiles, ".bbb")) == os.path.join(
+        "..", "source_with_dotfiles", "dot-bbb"
+    )
+
+    out, _ = capsys.readouterr()
+    d = os.path.join(dest_with_dotfiles, "aaa")
+    s = os.path.relpath(os.path.join(source_with_dotfiles, "aaa"), dest_with_dotfiles)
+    d2 = os.path.join(dest_with_dotfiles, ".bbb")
+    s2 = os.path.relpath(
+        os.path.join(source_with_dotfiles, "dot-bbb"), dest_with_dotfiles
+    )
+    assert (
+        out
+        == "dploy stow: link {dest} => {source}\ndploy stow: link {dest2} => {source2}\n".format(
+            source=s, dest=d, source2=s2, dest2=d2
+        )
+    )
+
+
+def test_cli_unstow_with_dotfiles_option(
+    source_with_dotfiles, dest_with_dotfiles, capsys
+):
+    args = ["stow", "--dotfiles", source_with_dotfiles, dest_with_dotfiles]
+    dploy.cli.run(args)
+    args_unstow = ["unstow", "--dotfiles", source_with_dotfiles, dest_with_dotfiles]
+    dploy.cli.run(args_unstow)
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, "aaa"))
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, ".bbb"))
+
+    out, _ = capsys.readouterr()
+    d = os.path.join(dest_with_dotfiles, "aaa")
+    s = os.path.relpath(os.path.join(source_with_dotfiles, "aaa"), dest_with_dotfiles)
+    d2 = os.path.join(dest_with_dotfiles, ".bbb")
+    s2 = os.path.relpath(
+        os.path.join(source_with_dotfiles, "dot-bbb"), dest_with_dotfiles
+    )
+    expected_output = (
+        "dploy stow: link {dest} => {source}\n"
+        "dploy stow: link {dest2} => {source2}\n"
+        "dploy unstow: unlink {dest} => {source}\n"
+        "dploy unstow: unlink {dest2} => {source2}\n".format(
+            source=s, dest=d, source2=s2, dest2=d2
+        )
+    )
+    assert out == (expected_output)
