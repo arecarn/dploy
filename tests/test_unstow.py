@@ -286,7 +286,7 @@ def test_unstow_with_dot_in_exist_fold_with_dotfiles(
     assert not os.path.exists(os.path.join(dest_with_dotfiles, ".bbb"))
 
 
-def test_unstow_with_dot_in_exist_fold_senario_with_dotfiles(
+def test_unstow_with_dot_in_exist_fold_exist_other_with_dotfiles(
     source_with_dotfiles, dest_with_dotfiles
 ):
     utils.create_directory(os.path.join(dest_with_dotfiles, "aaa"))
