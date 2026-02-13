@@ -3,11 +3,8 @@ dploy script is an attempt at creating a clone of GNU stow that will work on
 Windows as well as *nix
 """
 
-import sys
 from dploy import linkcmd
 from dploy import stowcmd
-
-assert sys.version_info >= (3, 3), "Requires Python 3.3 or Greater"
 
 
 def stow(sources, dest, is_silent=True, is_dry_run=False, ignore_patterns=None):

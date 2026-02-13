@@ -16,7 +16,7 @@ organized by order of importance.
 
 ### Removed
 
-## [0.1.3] - 2022-07-22
+## [0.1.3] - 2026-02-13
 
 ### Added
 
@@ -25,14 +25,20 @@ organized by order of importance.
 ### Changed
 
 - Switch to Poetry for packaging instead of setuptools.
-- Require at least python >= 3.7.2.
+- Require at least Python >= 3.10.
 - Use black for auto formatting instead of yapf.
 - Use custom *DployError* exceptions.
+- Version is now sourced from pyproject.toml via importlib.metadata.
 
 ### Fixed
 
 - Print syntax help if no valid subcommand was provided.
 - Fixed pytest.
+- Fixed invoke tasks to work with Poetry and Python 3.13.
+
+### Removed
+
+- Removed requirements.txt in favor of pyproject.toml dependency groups.
 
 ## [0.1.2] - 2017-10-26
 
@@ -60,8 +66,6 @@ organized by order of importance.
   e.g. with windows paths: `dploy stow C:\some\path D:\other\Path`
   Since the symbolic links can't use a relative path fallback to the absolute
   version of the path passed in.
-
-### Removed
 
 ## [0.1.1] - 2016-12-29
 
