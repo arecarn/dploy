@@ -3,11 +3,11 @@ Contains utilities used during testing
 """
 
 import os
-import stat
 import shutil
+import stat
 
 
-def remove_tree(tree):
+def remove_tree(tree) -> None:
     """
     reset the permission of a file and directory tree and remove it
     """
@@ -15,7 +15,7 @@ def remove_tree(tree):
     shutil.rmtree(tree)
 
 
-def remove_file(file_name):
+def remove_file(file_name) -> None:
     """
     reset the permission of a file and remove it
     """
@@ -30,7 +30,7 @@ def create_file(file_name):
     return open(file_name, "w", encoding="utf-8").close()
 
 
-def create_directory(directory_name):
+def create_directory(directory_name) -> None:
     """
     create an directory
     """
@@ -42,7 +42,7 @@ class ChangeDirectory:
     Context manager for changing the current working directory
     """
 
-    def __init__(self, new_path):
+    def __init__(self, new_path) -> None:
         self.new_path = os.path.expanduser(new_path)
         self.saved_path = os.getcwd()
 
@@ -53,7 +53,7 @@ class ChangeDirectory:
         os.chdir(self.saved_path)
 
 
-def create_tree(tree):
+def create_tree(tree) -> None:
     """
     create an file and directory tree
     """
@@ -69,7 +69,7 @@ def create_tree(tree):
                     create_tree(file_objs)
 
 
-def remove_read_permission(path):
+def remove_read_permission(path) -> None:
     """
     change users permissions to a path to write only
     """
@@ -77,7 +77,7 @@ def remove_read_permission(path):
     os.chmod(path, mode & ~stat.S_IRUSR & ~stat.S_IRGRP & ~stat.S_IROTH)
 
 
-def add_read_permission(path):
+def add_read_permission(path) -> None:
     """
     change users permissions to a path to write only
     """
@@ -85,7 +85,7 @@ def add_read_permission(path):
     os.chmod(path, mode | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
 
-def remove_write_permission(path):
+def remove_write_permission(path) -> None:
     """
     change users permissions to a path to read only
     """
@@ -93,7 +93,7 @@ def remove_write_permission(path):
     os.chmod(path, mode & ~stat.S_IWUSR & ~stat.S_IWGRP & ~stat.S_IWOTH)
 
 
-def remove_execute_permission(path):
+def remove_execute_permission(path) -> None:
     """
     change users permissions to a path to read only
     """

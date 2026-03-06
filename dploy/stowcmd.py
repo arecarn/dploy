@@ -2,13 +2,10 @@
 The logic and workings behind the stow and unstow sub-commands
 """
 
-from collections import Counter
 import pathlib
-from dploy import actions
-from dploy import utils
-from dploy import error
-from dploy import main
-from dploy import ignore
+from collections import Counter
+
+from dploy import actions, error, ignore, main, utils
 
 
 class AbstractBaseStow(main.AbstractBaseSubCommand):
@@ -17,7 +14,7 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
     commands
     """
 
-    def __init__(self, subcmd, source, dest, is_silent, is_dry_run, ignore_patterns):
+    def __init__(self, subcmd, source, dest, is_silent, is_dry_run, ignore_patterns) -> None:
         self.is_unfolding = False
         super().__init__(subcmd, source, dest, is_silent, is_dry_run, ignore_patterns)
 
@@ -44,25 +41,25 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
 
         return contents
 
-    def _are_same_file(self, source, dest):
+    def _are_same_file(self, source, dest) -> None:
         """
         Abstract method that handles the case when the source and dest are the
         same file when collecting actions
         """
 
-    def _are_directories(self, source, dest):
+    def _are_directories(self, source, dest) -> None:
         """
         Abstract method that handles the case when the source and dest are directories
         same file when collecting actions
         """
 
-    def _are_other(self, source, dest):
+    def _are_other(self, source, dest) -> None:
         """
         Abstract method that handles all other cases what to do if no particular
         condition is true cases are found
         """
 
-    def _collect_actions_existing_dest(self, source, dest):
+    def _collect_actions_existing_dest(self, source, dest) -> None:
         """
         _collect_actions() helper to collect required actions to perform a stow
         command when the destination already exists
@@ -78,7 +75,7 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
         else:
             self.errors.add(error.ConflictsWithExistingFile(self.subcmd, source, dest))
 
-    def _collect_actions(self, source, dest):
+    def _collect_actions(self, source, dest) -> None:
         """
         Concrete method to collect required actions to perform a stow
         sub-command
@@ -128,10 +125,10 @@ class Stow(AbstractBaseStow):
 
     def __init__(
         self, source, dest, is_silent=True, is_dry_run=False, ignore_patterns=None
-    ):
+    ) -> None:
         super().__init__("stow", source, dest, is_silent, is_dry_run, ignore_patterns)
 
-    def _unfold(self, source, dest):
+    def _unfold(self, source, dest) -> None:
         """
         Method unfold a destination directory
         """
@@ -141,7 +138,7 @@ class Stow(AbstractBaseStow):
         self._collect_actions(source, dest)
         self.is_unfolding = False
 
-    def _handle_duplicate_actions(self):
+    def _handle_duplicate_actions(self) -> None:
         """
         check for symbolic link actions that would cause conflicting symbolic
         links to the same destination. Also check for actions that conflict but
@@ -185,10 +182,10 @@ class Stow(AbstractBaseStow):
 
         self._handle_duplicate_actions()
 
-    def _check_for_other_actions(self):
+    def _check_for_other_actions(self) -> None:
         self._handle_duplicate_actions()
 
-    def _are_same_file(self, source, dest):
+    def _are_same_file(self, source, dest) -> None:
         """
         what to do if source and dest are the same files
         """
@@ -197,12 +194,12 @@ class Stow(AbstractBaseStow):
         else:
             self.actions.add(actions.AlreadyLinked(self.subcmd, source, dest))
 
-    def _are_directories(self, source, dest):
+    def _are_directories(self, source, dest) -> None:
         if dest.is_symlink():
             self._unfold(dest.resolve(), dest)
         self._collect_actions(source, dest)
 
-    def _are_other(self, source, dest):
+    def _are_other(self, source, dest) -> None:
         self.actions.add(actions.SymbolicLink(self.subcmd, source, dest))
 
 
@@ -213,25 +210,25 @@ class UnStow(AbstractBaseStow):
 
     def __init__(
         self, source, dest, is_silent=True, is_dry_run=False, ignore_patterns=None
-    ):
+    ) -> None:
         super().__init__("unstow", source, dest, is_silent, is_dry_run, ignore_patterns)
 
-    def _are_same_file(self, source, dest):
+    def _are_same_file(self, source, dest) -> None:
         """
         what to do if source and dest are the same files
         """
         self.actions.add(actions.UnLink(self.subcmd, dest))
 
-    def _are_directories(self, source, dest):
+    def _are_directories(self, source, dest) -> None:
         self._collect_actions(source, dest)
 
-    def _are_other(self, source, dest):
+    def _are_other(self, source, dest) -> None:
         self.actions.add(actions.AlreadyUnlinked(self.subcmd, source, dest))
 
-    def _check_for_other_actions(self):
+    def _check_for_other_actions(self) -> None:
         self._collect_folding_actions()
 
-    def _collect_folding_actions(self):
+    def _collect_folding_actions(self) -> None:
         """
         find candidates for folding i.e. when a directory contains symlinks to
         files that all share the same parent directory
@@ -275,7 +272,7 @@ class UnStow(AbstractBaseStow):
                 ):
                     self.actions.add(actions.RemoveDirectory(self.subcmd, parent))
 
-    def _fold(self, source, dest):
+    def _fold(self, source, dest) -> None:
         """
         add the required actions for folding
         """
@@ -352,9 +349,8 @@ class StowInput(main.Input):
         if not self._is_valid_source(source):
             result = False
 
-        if dest.exists():
-            if not self._is_valid_dest(dest):
-                result = False
+        if dest.exists() and not self._is_valid_dest(dest):
+            result = False
         return result
 
 
@@ -364,7 +360,7 @@ class Clean(main.AbstractBaseSubCommand):
     commands
     """
 
-    def __init__(self, source, dest, is_silent, is_dry_run, ignore_patterns):
+    def __init__(self, source, dest, is_silent, is_dry_run, ignore_patterns) -> None:
         self.source = [pathlib.Path(s) for s in source]
         self.dest = pathlib.Path(dest)
         self.ignore_patterns = ignore_patterns
@@ -393,7 +389,7 @@ class Clean(main.AbstractBaseSubCommand):
 
         return contents
 
-    def _collect_clean_actions(self, source, source_names, dest):
+    def _collect_clean_actions(self, source, source_names, dest) -> None:
         subdests = utils.get_directory_contents(dest)
         for subdest in subdests:
             if subdest.is_symlink():
@@ -405,7 +401,7 @@ class Clean(main.AbstractBaseSubCommand):
             elif subdest.is_dir():
                 self._collect_clean_actions(source, source_names, subdest)
 
-    def _check_for_other_actions(self):
+    def _check_for_other_actions(self) -> None:
         """
         Concrete method to collect required actions to perform a stow
         sub-command

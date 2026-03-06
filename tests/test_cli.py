@@ -4,11 +4,13 @@ Tests for the CLI interface
 
 import os
 import re
+
 import pytest
+
 import dploy.cli
 
 
-def test_cli_with_stow_with_simple_senario(source_only_files, dest, capsys):
+def test_cli_with_stow_with_simple_senario(source_only_files, dest, capsys) -> None:
     args = ["stow", source_only_files, dest]
     dploy.cli.run(args)
     assert os.readlink(os.path.join(dest, "aaa")) == os.path.join(
@@ -20,7 +22,7 @@ def test_cli_with_stow_with_simple_senario(source_only_files, dest, capsys):
     assert out == f"dploy stow: link {d} => {s}\n"
 
 
-def test_cli_unstow_with_basic_senario(source_a, dest, capsys):
+def test_cli_unstow_with_basic_senario(source_a, dest, capsys) -> None:
     args_stow = ["stow", source_a, dest]
     dploy.cli.run(args_stow)
     assert os.readlink(os.path.join(dest, "aaa")) == os.path.join(
@@ -41,7 +43,7 @@ def test_cli_unstow_with_basic_senario(source_a, dest, capsys):
     assert out == (expected_output)
 
 
-def test_cli_with_link_directory(source_a, dest, capsys):
+def test_cli_with_link_directory(source_a, dest, capsys) -> None:
     args = ["link", source_a, os.path.join(dest, "source_a_link")]
     dploy.cli.run(args)
     assert os.path.islink(os.path.join(dest, "source_a_link"))
@@ -55,7 +57,7 @@ def test_cli_with_link_directory(source_a, dest, capsys):
 
 def test_cli_with_dry_run_option_with_stow_with_simple_senario(
     source_only_files, dest, capsys
-):
+) -> None:
     args = ["--dry-run", "stow", source_only_files, dest]
     dploy.cli.run(args)
     assert not os.path.exists(os.path.join(dest, "aaa"))
@@ -67,7 +69,7 @@ def test_cli_with_dry_run_option_with_stow_with_simple_senario(
 
 def test_cli_with_silent_option_with_stow_with_simple_senario(
     source_only_files, dest, capsys
-):
+) -> None:
     args = ["--silent", "stow", source_only_files, dest]
     dploy.cli.run(args)
     assert os.readlink(os.path.join(dest, "aaa")) == os.path.join(
@@ -77,7 +79,7 @@ def test_cli_with_silent_option_with_stow_with_simple_senario(
     assert out == ""
 
 
-def test_cli_with_version_option(capsys):
+def test_cli_with_version_option(capsys) -> None:
     args = ["--version"]
     with pytest.raises(SystemExit):
         dploy.cli.run(args)

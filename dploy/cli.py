@@ -2,15 +2,14 @@
 The command line interface
 """
 
-import sys
 import argparse
-from dploy import linkcmd
-from dploy import stowcmd
-from dploy import version
+import sys
+
+from dploy import linkcmd, stowcmd, version
 from dploy.error import DployError
 
 
-def add_ignore_argument(parser):
+def add_ignore_argument(parser) -> None:
     """
     adds the ignore argument to a subcmd parser
     """
@@ -72,7 +71,7 @@ def create_parser():
     return parser
 
 
-def run(arguments=None):
+def run(arguments=None) -> None:
     """
     interpret the parser arguments and execute the corresponding commands
     """

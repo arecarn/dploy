@@ -3,6 +3,7 @@ Project Tasks that can be invoked using using the program "invoke" or "inv"
 """
 
 import os
+
 from invoke import task
 
 # disable the check for unused-arguments to ignore unused ctx parameter in tasks
@@ -30,7 +31,7 @@ def get_files():
 
 
 @task
-def setup(ctx):
+def setup(ctx) -> None:
     """
     Install python requirements
     """
@@ -38,7 +39,7 @@ def setup(ctx):
 
 
 @task
-def clean(ctx):
+def clean(ctx) -> None:
     """
     Clean repository using git
     """
@@ -48,37 +49,38 @@ def clean(ctx):
 @task
 def lint(ctx):
     """
-    Run pylint on this module
+    Run pylint, ruff, and ty on this module
     """
-    cmds = ["pylint --output-format=parseable", "flake8"]
+    cmds = ["pylint --output-format=parseable", "ruff check", "ty check"]
     base_cmd = "uv run {cmd} {files}"
+
 
     for cmd in cmds:
         ctx.run(base_cmd.format(cmd=cmd, files=get_files()), **RUN_ARGS)
 
 
 @task
-def reformat_check(ctx):
+def reformat_check(ctx) -> None:
     """
     Run formatting check
     """
-    cmd = "black --check"
+    cmd = "ruff format --check"
     base_cmd = "uv run {cmd} {files}"
     ctx.run(base_cmd.format(cmd=cmd, files=get_files()), **RUN_ARGS)
 
 
 @task
-def reformat(ctx):
+def reformat(ctx) -> None:
     """
     Run formatting
     """
-    cmd = "black"
+    cmd = "ruff format"
     base_cmd = "uv run {cmd} {files}"
     ctx.run(base_cmd.format(cmd=cmd, files=get_files()), **RUN_ARGS)
 
 
 @task
-def metrics(ctx):
+def metrics(ctx) -> None:
     """
     Run radon code metrics on this module
     """
@@ -89,7 +91,7 @@ def metrics(ctx):
 
 
 @task()
-def test(ctx):
+def test(ctx) -> None:
     """
     Test Task
     """
@@ -99,14 +101,14 @@ def test(ctx):
 
 # pylint: disable=redefined-builtin
 @task(test, lint, reformat_check, metrics)
-def all(ctx):
+def all(ctx) -> None:
     """
     Run all CI tasks: test, lint, reformat_check, and metrics
     """
 
 
 @task(clean)
-def build(ctx):
+def build(ctx) -> None:
     """
     Task to build an executable using pyinstaller
     """

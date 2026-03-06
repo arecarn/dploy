@@ -4,7 +4,9 @@ Tests for the link sub command
 
 import os
 import re
+
 import pytest
+
 import dploy
 from dploy import error
 from tests import utils
@@ -12,31 +14,31 @@ from tests import utils
 SUBCMD = "link"
 
 
-def test_link_with_directory_as_source(source_a, dest):
+def test_link_with_directory_as_source(source_a, dest) -> None:
     dploy.link(source_a, os.path.join(dest, "source_a_link"))
     assert os.path.islink(os.path.join(dest, "source_a_link"))
 
 
-def test_link_with_file_as_source(file_a, dest):
+def test_link_with_file_as_source(file_a, dest) -> None:
     dploy.link(file_a, os.path.join(dest, "file_a"))
     assert os.path.islink(os.path.join(dest, "file_a"))
 
 
-def test_link_with_non_existant_source(dest):
+def test_link_with_non_existant_source(dest) -> None:
     non_existant_source = "source_a"
     message = str(error.NoSuchFileOrDirectory(subcmd=SUBCMD, file=non_existant_source))
     with pytest.raises(error.NoSuchFileOrDirectory, match=re.escape(message)):
         dploy.link(non_existant_source, os.path.join(dest, "source_a_link"))
 
 
-def test_link_with_non_existant_dest(source_a):
+def test_link_with_non_existant_dest(source_a) -> None:
     non_existant_dest = "dest"
     message = str(error.NoSuchFileOrDirectory(subcmd=SUBCMD, file=non_existant_dest))
     with pytest.raises(error.NoSuchFileOrDirectory, match=re.escape(message)):
         dploy.link(source_a, os.path.join(non_existant_dest, "source_a_link"))
 
 
-def test_link_with_read_only_dest(file_a, dest):
+def test_link_with_read_only_dest(file_a, dest) -> None:
     dest_file = os.path.join(dest, "file_a_link")
     utils.remove_write_permission(dest)
     message = str(
@@ -48,7 +50,7 @@ def test_link_with_read_only_dest(file_a, dest):
         dploy.link(file_a, dest_file)
 
 
-def test_link_with_write_only_source(file_a, dest):
+def test_link_with_write_only_source(file_a, dest) -> None:
     dest_file = os.path.join(dest, "file_a_link")
     utils.remove_read_permission(file_a)
     message = str(error.InsufficientPermissions(subcmd=SUBCMD, file=file_a))
@@ -56,7 +58,7 @@ def test_link_with_write_only_source(file_a, dest):
         dploy.link(file_a, dest_file)
 
 
-def test_link_with_conflicting_broken_link_at_dest(file_a, dest):
+def test_link_with_conflicting_broken_link_at_dest(file_a, dest) -> None:
     dest_file = os.path.join(dest, "file_a_link")
     os.symlink("non_existant_source", dest_file)
     message = str(

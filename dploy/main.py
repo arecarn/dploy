@@ -2,11 +2,10 @@
 The logic and workings behind the stow and unstow sub-commands
 """
 
-from collections import defaultdict
 import pathlib
-from dploy import actions
-from dploy import error
-from dploy import ignore
+from collections import defaultdict
+
+from dploy import actions, error, ignore
 
 
 class Input:
@@ -14,7 +13,7 @@ class Input:
     Input validator abstract base class
     """
 
-    def __init__(self, errors, subcmd):
+    def __init__(self, errors, subcmd) -> None:
         self.errors = errors
         self.subcmd = subcmd
 
@@ -50,15 +49,17 @@ class Input:
 
         return is_there_duplicates
 
-    def _is_valid_dest(self, dest):
+    def _is_valid_dest(self, dest) -> bool:
         """
         Abstract method to check if the dest input to a sub-command is valid
         """
+        return True
 
-    def _is_valid_source(self, source):
+    def _is_valid_source(self, source) -> bool:
         """
         Abstract method to check if the source input to a sub-command is valid
         """
+        return True
 
 
 class AbstractBaseSubCommand:
@@ -66,7 +67,7 @@ class AbstractBaseSubCommand:
     An abstract class to unify shared functionality in stow commands
     """
 
-    def __init__(self, subcmd, sources, dest, is_silent, is_dry_run, ignore_patterns):
+    def __init__(self, subcmd, sources, dest, is_silent, is_dry_run, ignore_patterns) -> None:
         self.subcmd = subcmd
 
         self.actions = actions.Actions(is_silent, is_dry_run)
@@ -91,24 +92,24 @@ class AbstractBaseSubCommand:
         self._check_for_other_actions()
         self._execute_actions()
 
-    def _check_for_other_actions(self):
+    def _check_for_other_actions(self) -> None:
         """
         Abstract method for examine the existing action to see if more actions
         need to be added or if some actions need to be removed.
         """
 
-    def _is_valid_input(self, sources, dest):
+    def _is_valid_input(self, sources, dest) -> None:
         """
         Abstract method to check if the input to a sub-command is valid
         """
 
-    def _collect_actions(self, source, dest):
+    def _collect_actions(self, source, dest) -> None:
         """
         Abstract method that collects the actions required to complete a
         sub-command.
         """
 
-    def _execute_actions(self):
+    def _execute_actions(self) -> None:
         """
         Either executes collected actions by a sub command or raises collected
         exceptions.

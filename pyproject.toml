@@ -27,13 +27,41 @@ dev = [
     "pylint>=2.0",
     "radon>=2.0.3",
     "invoke>=2.0",
-    "black>=22.0",
-    "flake8>=5.0",
+    "ruff",
+    "ty",
 ]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.ruff]
+# Match black's default line length
+line-length = 88
+
+[tool.ruff.lint]
+# Enable a broader set of rules
+# E/W: pycodestyle
+# F: Pyflakes
+# I: isort
+# UP: pyupgrade
+# B: flake8-bugbear
+# SIM: flake8-simplify
+# RUF: Ruff-specific rules
+# ANN: flake8-annotations (type annotations)
+# TC: flake8-type-checking
+# PYI: flake8-pyi
+# FA: flake8-future-annotations
+select = ["E", "W", "F", "I", "UP", "B", "SIM", "RUF", "ANN", "TC", "PYI", "FA"]
+
+# Preserve the ignores from .flake8
+# E501: line-length (let pylint/formatter handle)
+# F821: undefined-name (let pylint handle)
+# ANN401: any-type (sometimes necessary)
+ignore = ["E501", "F821", "ANN401"]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
 
 [tool.pylint.messages_control]
 disable = [

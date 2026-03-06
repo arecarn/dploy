@@ -4,6 +4,7 @@ commands
 """
 
 from collections import defaultdict
+
 from dploy import utils
 
 
@@ -12,18 +13,18 @@ class Actions:
     A class that collects and executes action objects
     """
 
-    def __init__(self, is_silent, is_dry_run):
+    def __init__(self, is_silent, is_dry_run) -> None:
         self.actions = []
         self.is_silent = is_silent
         self.is_dry_run = is_dry_run
 
-    def add(self, action):
+    def add(self, action) -> None:
         """
         Adds an action
         """
         self.actions.append(action)
 
-    def execute(self):
+    def execute(self) -> None:
         """
         Prints and executes actions
         """
@@ -74,10 +75,10 @@ class AbstractBaseAction:
     An abstract base class that define the interface for actions
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
-    def execute(self):
+    def execute(self) -> None:
         """
         function that executes the logic of each concrete action
         """
@@ -88,17 +89,17 @@ class SymbolicLink(AbstractBaseAction):
     Action to create a symbolic link relative to the source of the link
     """
 
-    def __init__(self, subcmd, source, dest):
+    def __init__(self, subcmd, source, dest) -> None:
         super().__init__()
         self.source = source
         self.source_relative = utils.get_relative_path(source, dest.parent)
         self.subcmd = subcmd
         self.dest = dest
 
-    def execute(self):
+    def execute(self) -> None:
         self.dest.symlink_to(self.source_relative)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"dploy {self.subcmd}: link {self.dest} => {self.source_relative}"
 
 
@@ -107,17 +108,17 @@ class AlreadyLinked(AbstractBaseAction):
     Action to used to print an already linked message
     """
 
-    def __init__(self, subcmd, source, dest):
+    def __init__(self, subcmd, source, dest) -> None:
         super().__init__()
         self.source = source
         self.source_relative = utils.get_relative_path(source, dest.parent)
         self.dest = dest
         self.subcmd = subcmd
 
-    def execute(self):
+    def execute(self) -> None:
         pass
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"dploy {self.subcmd}: already linked {self.dest} => {self.source_relative}"
         )
@@ -128,17 +129,17 @@ class AlreadyUnlinked(AbstractBaseAction):
     Action to used to print an already unlinked message
     """
 
-    def __init__(self, subcmd, source, dest):
+    def __init__(self, subcmd, source, dest) -> None:
         super().__init__()
         self.source = source
         self.source_relative = utils.get_relative_path(source, dest.parent)
         self.dest = dest
         self.subcmd = subcmd
 
-    def execute(self):
+    def execute(self) -> None:
         pass
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"dploy {self.subcmd}: already unlinked {self.dest} => {self.source_relative}"
 
 
@@ -147,19 +148,19 @@ class UnLink(AbstractBaseAction):
     Action to unlink a symbolic link
     """
 
-    def __init__(self, subcmd, target):
+    def __init__(self, subcmd, target) -> None:
         super().__init__()
         self.target = target
         self.subcmd = subcmd
 
-    def execute(self):
+    def execute(self) -> None:
         if not self.target.is_symlink():
             raise RuntimeError(
                 f"dploy detected and aborted an attempt to unlink a non-symlink {self.target} this is a bug and should be reported"
             )
         self.target.unlink()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"dploy {self.subcmd}: unlink {self.target} => {utils.readlink(self.target)}"
 
 
@@ -168,15 +169,15 @@ class MakeDirectory(AbstractBaseAction):
     Action to create a directory
     """
 
-    def __init__(self, subcmd, target):
+    def __init__(self, subcmd, target) -> None:
         super().__init__()
         self.target = target
         self.subcmd = subcmd
 
-    def execute(self):
+    def execute(self) -> None:
         self.target.mkdir()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"dploy {self.subcmd}: make directory {self.target}"
 
 
@@ -185,13 +186,13 @@ class RemoveDirectory(AbstractBaseAction):
     Action to remove a directory
     """
 
-    def __init__(self, subcmd, target):
+    def __init__(self, subcmd, target) -> None:
         super().__init__()
         self.target = target
         self.subcmd = subcmd
 
-    def execute(self):
+    def execute(self) -> None:
         self.target.rmdir()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"dploy {self.subcmd}: remove directory {self.target}"

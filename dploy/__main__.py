@@ -6,7 +6,7 @@ The entry point when dploy is called as a module
 from dploy import cli
 
 
-def main():
+def main() -> None:
     """
     main entry point when using dploy from the command line
     """

@@ -38,10 +38,10 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-groups
 
-      - name: Lint (pylint, flake8)
+      - name: Lint (pylint, ruff, ty)
         run: uv run invoke lint
 
-      - name: Reformat Check (black)
+      - name: Reformat Check (ruff)
         run: uv run invoke reformat-check
 
       - name: Metrics (radon)

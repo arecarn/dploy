@@ -20,7 +20,7 @@ def get_directory_contents(directory):
     return sorted(contents)
 
 
-def rmtree(tree):
+def rmtree(tree) -> None:
     """
     a wrapper around shutil.rmtree to recursively delete a directory specified
     by a pathlib.Path object

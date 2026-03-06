@@ -3,6 +3,7 @@ Module for the --ignore IGNORE_PATTERN flag and .dploystowignore file
 """
 
 import pathlib
+
 from dploy import utils
 
 
@@ -12,11 +13,8 @@ class Ignore:
     in a specified ignore file.
     """
 
-    def __init__(self, patterns, source):
-        if patterns is None:
-            input_patterns = []
-        else:
-            input_patterns = patterns
+    def __init__(self, patterns, source) -> None:
+        input_patterns = [] if patterns is None else patterns
         self.ignored_files = []
 
         file = source.parent / pathlib.Path(".dploystowignore")
@@ -25,7 +23,7 @@ class Ignore:
         self.patterns.extend(input_patterns)
         self._read_ignore_file_patterns(file)
 
-    def _read_ignore_file_patterns(self, file):
+    def _read_ignore_file_patterns(self, file) -> None:
         """
         read ignore patterns from a specified file
         """
@@ -36,7 +34,7 @@ class Ignore:
         except FileNotFoundError:
             pass
 
-    def should_ignore(self, source):
+    def should_ignore(self, source) -> bool:
         """
         check if a source should be ignored, based on the ignore patterns in
         self.patterns
@@ -55,7 +53,7 @@ class Ignore:
                     return True
         return False
 
-    def ignore(self, file):
+    def ignore(self, file) -> None:
         """
         add a file to be ignored
         """
