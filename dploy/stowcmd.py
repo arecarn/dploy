@@ -18,7 +18,7 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
     commands
     """
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-positional-arguments
     def __init__(self, subcmd, source, dest, is_silent, is_dry_run, ignore_patterns):
         self.is_unfolding = False
         super().__init__(subcmd, source, dest, is_silent, is_dry_run, ignore_patterns)
@@ -51,21 +51,18 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
         Abstract method that handles the case when the source and dest are the
         same file when collecting actions
         """
-        pass
 
     def _are_directories(self, source, dest):
         """
         Abstract method that handles the case when the source and dest are directories
         same file when collecting actions
         """
-        pass
 
     def _are_other(self, source, dest):
         """
         Abstract method that handles all other cases what to do if no particular
         condition is true cases are found
         """
-        pass
 
     def _collect_actions_existing_dest(self, source, dest):
         """
@@ -132,7 +129,7 @@ class Stow(AbstractBaseStow):
     Concrete class implementation of the stow sub-command
     """
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-positional-arguments
     def __init__(
         self, source, dest, is_silent=True, is_dry_run=False, ignore_patterns=None
     ):
@@ -219,7 +216,7 @@ class UnStow(AbstractBaseStow):
     Concrete class implementation of the unstow sub-command
     """
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-positional-arguments
     def __init__(
         self, source, dest, is_silent=True, is_dry_run=False, ignore_patterns=None
     ):
@@ -374,7 +371,7 @@ class Clean(main.AbstractBaseSubCommand):
     commands
     """
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-positional-arguments
     def __init__(self, source, dest, is_silent, is_dry_run, ignore_patterns):
         self.source = [pathlib.Path(s) for s in source]
         self.dest = pathlib.Path(dest)
@@ -427,8 +424,8 @@ class Clean(main.AbstractBaseSubCommand):
             if self.ignore.should_ignore(a_file):
                 self.ignore.ignore(a_file)
                 continue
-            else:
-                valid_files.append(a_file)
+
+            valid_files.append(a_file)
 
             if not StowInput(self.errors, self.subcmd).is_valid_collection_input(
                 a_file, self.dest

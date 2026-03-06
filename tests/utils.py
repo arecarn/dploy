@@ -27,7 +27,7 @@ def create_file(file_name):
     """
     create an file
     """
-    return open(file_name, "w").close()
+    return open(file_name, "w", encoding="utf-8").close()
 
 
 def create_directory(directory_name):

@@ -29,7 +29,7 @@ class Ignore:
         read ignore patterns from a specified file
         """
         try:
-            with open(str(file)) as afile:
+            with open(str(file), encoding="utf-8") as afile:
                 file_patterns = afile.read().splitlines()
                 self.patterns.extend(file_patterns)
         except FileNotFoundError:

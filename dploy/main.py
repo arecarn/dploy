@@ -55,13 +55,11 @@ class Input:
         """
         Abstract method to check if the dest input to a sub-command is valid
         """
-        pass
 
     def _is_valid_source(self, source):
         """
         Abstract method to check if the source input to a sub-command is valid
         """
-        pass
 
 
 # pylint: disable=too-few-public-methods
@@ -70,7 +68,7 @@ class AbstractBaseSubCommand:
     An abstract class to unify shared functionality in stow commands
     """
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-positional-arguments
     def __init__(self, subcmd, sources, dest, is_silent, is_dry_run, ignore_patterns):
         self.subcmd = subcmd
 
@@ -101,20 +99,17 @@ class AbstractBaseSubCommand:
         Abstract method for examine the existing action to see if more actions
         need to be added or if some actions need to be removed.
         """
-        pass
 
     def _is_valid_input(self, sources, dest):
         """
         Abstract method to check if the input to a sub-command is valid
         """
-        pass
 
     def _collect_actions(self, source, dest):
         """
         Abstract method that collects the actions required to complete a
         sub-command.
         """
-        pass
 
     def _execute_actions(self):
         """

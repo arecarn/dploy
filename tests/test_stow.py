@@ -52,12 +52,6 @@ def test_stow_with_existing_file_conflicts(source_a, source_c, dest):
 def test_stow_with_existing_broken_link(source_a, dest):
     conflicting_link = os.path.join(dest, "aaa")
     os.symlink("non_existant_source", conflicting_link)
-    source_file = os.path.join(source_a, "aaa")
-    message = str(
-        error.ConflictsWithExistingLink(
-            subcmd=SUBCMD, source=source_file, dest=conflicting_link
-        )
-    )
     with pytest.raises(error.ConflictsWithExistingLink):
         dploy.stow([source_a], dest)
 
@@ -233,8 +227,5 @@ def test_stow_unfolding_with_write_only_source_file(source_a, source_b, dest):
     source_file = os.path.join(source_a, "aaa")
     utils.remove_read_permission(source_file)
 
-    message = str(
-        error.InsufficientPermissionsToSubcmdFrom(subcmd=SUBCMD, file=source_file)
-    )
     with pytest.raises(error.InsufficientPermissionsToSubcmdFrom):
         dploy.stow([source_a, source_b], dest)

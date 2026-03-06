@@ -14,7 +14,7 @@ class Link(main.AbstractBaseSubCommand):
     Concrete class implementation of the link sub-command
     """
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments, too-many-positional-arguments
     def __init__(
         self, source, dest, is_silent=True, is_dry_run=False, ignore_patterns=None
     ):
@@ -59,7 +59,7 @@ class LinkInput(main.Input):
             self.errors.add(error.NoSuchFileOrDirectory(self.subcmd, dest.parent))
             return False
 
-        elif not utils.is_file_writable(dest.parent) or not utils.is_directory_writable(
+        if not utils.is_file_writable(dest.parent) or not utils.is_directory_writable(
             dest.parent
         ):
             self.errors.add(error.InsufficientPermissionsToSubcmdTo(self.subcmd, dest))
@@ -72,7 +72,7 @@ class LinkInput(main.Input):
             self.errors.add(error.NoSuchFileOrDirectory(self.subcmd, source))
             return False
 
-        elif not utils.is_file_readable(source) or not utils.is_directory_readable(
+        if not utils.is_file_readable(source) or not utils.is_directory_readable(
             source
         ):
             self.errors.add(error.InsufficientPermissions(self.subcmd, source))

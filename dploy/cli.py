@@ -32,7 +32,7 @@ def create_parser():
     parser.add_argument(
         "--version",
         action="version",
-        version="%(prog)s {version}".format(version=version.__version__),
+        version=f"%(prog)s {version.__version__}",
     )
     parser.add_argument(
         "--silent", dest="is_silent", action="store_true", help="suppress all output"

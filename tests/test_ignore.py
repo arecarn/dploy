@@ -35,7 +35,7 @@ def test_ignore_file_by_ignoring_everthing__(
     source_a, source_c, file_dploystowignore, dest
 ):
     ignore_patterns = ["*/aaa"]
-    with open(file_dploystowignore, "w") as file:
+    with open(file_dploystowignore, "w", encoding="utf-8") as file:
         file.write("\n".join(ignore_patterns))
     dploy.stow([source_a, source_c], dest)
     assert not os.path.exists(os.path.join(dest, "aaa"))

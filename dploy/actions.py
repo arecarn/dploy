@@ -46,7 +46,7 @@ class Actions:
         """
         unlink_actions = self.get_unlink_actions()
         # sort for deterministic output
-        return sorted(set([a.target.parent for a in unlink_actions]))
+        return sorted({a.target.parent for a in unlink_actions})
 
     def get_unlink_targets(self):
         """
@@ -82,7 +82,6 @@ class AbstractBaseAction:
         """
         function that executes the logic of each concrete action
         """
-        pass
 
 
 class SymbolicLink(AbstractBaseAction):
@@ -102,9 +101,7 @@ class SymbolicLink(AbstractBaseAction):
         self.dest.symlink_to(self.source_relative)
 
     def __repr__(self):
-        return "dploy {subcmd}: link {dest} => {source}".format(
-            subcmd=self.subcmd, dest=self.dest, source=self.source_relative
-        )
+        return f"dploy {self.subcmd}: link {self.dest} => {self.source_relative}"
 
 
 class AlreadyLinked(AbstractBaseAction):
@@ -124,9 +121,7 @@ class AlreadyLinked(AbstractBaseAction):
         pass
 
     def __repr__(self):
-        return "dploy {subcmd}: already linked {dest} => {source}".format(
-            subcmd=self.subcmd, source=self.source_relative, dest=self.dest
-        )
+        return f"dploy {self.subcmd}: already linked {self.dest} => {self.source_relative}"
 
 
 class AlreadyUnlinked(AbstractBaseAction):
@@ -146,9 +141,7 @@ class AlreadyUnlinked(AbstractBaseAction):
         pass
 
     def __repr__(self):
-        return "dploy {subcmd}: already unlinked {dest} => {source}".format(
-            subcmd=self.subcmd, source=self.source_relative, dest=self.dest
-        )
+        return f"dploy {self.subcmd}: already unlinked {self.dest} => {self.source_relative}"
 
 
 class UnLink(AbstractBaseAction):
@@ -166,16 +159,12 @@ class UnLink(AbstractBaseAction):
         if not self.target.is_symlink():
             # pylint: disable=line-too-long
             raise RuntimeError(
-                "dploy detected and aborted an attempt to unlink a non-symlink {target} this is a bug and should be reported".format(
-                    target=self.target
-                )
+                f"dploy detected and aborted an attempt to unlink a non-symlink {self.target} this is a bug and should be reported"
             )
         self.target.unlink()
 
     def __repr__(self):
-        return "dploy {subcmd}: unlink {target} => {source}".format(
-            subcmd=self.subcmd, target=self.target, source=utils.readlink(self.target)
-        )
+        return f"dploy {self.subcmd}: unlink {self.target} => {utils.readlink(self.target)}"
 
 
 class MakeDirectory(AbstractBaseAction):
@@ -193,9 +182,7 @@ class MakeDirectory(AbstractBaseAction):
         self.target.mkdir()
 
     def __repr__(self):
-        return "dploy {subcmd}: make directory {target}".format(
-            target=self.target, subcmd=self.subcmd
-        )
+        return f"dploy {self.subcmd}: make directory {self.target}"
 
 
 class RemoveDirectory(AbstractBaseAction):
@@ -213,5 +200,4 @@ class RemoveDirectory(AbstractBaseAction):
         self.target.rmdir()
 
     def __repr__(self):
-        msg = "dploy {subcmd}: remove directory {target}"
-        return msg.format(target=self.target, subcmd=self.subcmd)
+        return f"dploy {self.subcmd}: remove directory {self.target}"
