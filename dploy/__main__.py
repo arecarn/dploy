@@ -3,10 +3,7 @@
 The entry point when dploy is called as a module
 """
 
-import sys
 from dploy import cli
-
-assert sys.version_info >= (3, 3), "Requires Python 3.3 or Greater"
 
 
 def main():

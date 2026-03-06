@@ -34,7 +34,7 @@ def setup(ctx):
     """
     Install python requirements
     """
-    ctx.run("python -m pip install -r requirements.txt", **RUN_ARGS)
+    ctx.run("poetry install", **RUN_ARGS)
 
 
 @task
@@ -51,7 +51,7 @@ def lint(ctx):
     Run pylint on this module
     """
     cmds = ["pylint --output-format=parseable", "flake8"]
-    base_cmd = "python -m {cmd} {files}"
+    base_cmd = "poetry run {cmd} {files}"
 
     for cmd in cmds:
         ctx.run(base_cmd.format(cmd=cmd, files=get_files()), **RUN_ARGS)
@@ -63,7 +63,7 @@ def reformat_check(ctx):
     Run formatting check
     """
     cmd = "black --check"
-    base_cmd = "python -m {cmd} {files}"
+    base_cmd = "poetry run {cmd} {files}"
     ctx.run(base_cmd.format(cmd=cmd, files=get_files()), **RUN_ARGS)
 
 
@@ -73,7 +73,7 @@ def reformat(ctx):
     Run formatting
     """
     cmd = "black"
-    base_cmd = "python -m {cmd} {files}"
+    base_cmd = "poetry run {cmd} {files}"
     ctx.run(base_cmd.format(cmd=cmd, files=get_files()), **RUN_ARGS)
 
 
@@ -82,7 +82,7 @@ def metrics(ctx):
     """
     Run radon code metrics on this module
     """
-    cmd = "radon {metric} --min B {files}"
+    cmd = "poetry run radon {metric} --min B {files}"
     metrics_to_run = ["cc", "mi"]
     for metric in metrics_to_run:
         ctx.run(cmd.format(metric=metric, files=get_files()), **RUN_ARGS)
@@ -93,8 +93,7 @@ def test(ctx):
     """
     Test Task
     """
-    # Use py.test instead of the recommended pytest so it works on Python 3.3
-    cmd = "py.test --cov-report term-missing --cov=dploy --color=no"
+    cmd = "poetry run pytest --cov-report term-missing --cov=dploy --color=no"
     ctx.run(cmd, **RUN_ARGS)
 
 

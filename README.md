@@ -2,7 +2,7 @@
 
 Dploy is a tool for creating symbolic links similarly to [GNU
 Stow](https://www.gnu.org/software/stow/). It is provided as a CLI tool and
-Python 3.6.2+ module and supports Windows, Linux, and OSX.
+Python 3.10+ module and supports Windows, Linux, and OSX.
 
 Dploy's command `stow` creates symbolic links to the contents of source
 directories or packages in a specified destination directory. Repeating the
@@ -22,6 +22,7 @@ that the links to stowed packages have been removed.
 
 * `dploy stow <source-directory>... <destination-directory>`
 * `dploy unstow <source-directory>... <destination-directory>`
+* `dploy clean <source-directory>... <destination-directory>`
 * `dploy --help`
 
 ## Rationale

@@ -32,7 +32,7 @@ def is_same_file(file1, file2):
     """
     test if two pathlib.Path() objects are the same file
 
-    NOTE: python 3.5 supports pathlib.Path.samefile(file)
+    TODO: consider using pathlib.Path.samefile() instead
     NOTE: this can raise exception FileNotFoundError
     """
     return file1.resolve() == file2.resolve()
@@ -59,8 +59,7 @@ def get_relative_path(path, start_at):
     """
     get the relative path of a pathlib.Path() object
 
-    NOTE: python 3.4.5 & 3.5.2 support pathlib.Path.path =
-    str(pathlib.Path)
+    TODO: consider using Path.relative_to() with walk_up=True (3.12+)
     """
     try:
         relative_path = os.path.relpath(str(path), str(start_at))
@@ -112,8 +111,7 @@ def readlink(path, absolute_target=False):
     relative.
 
     Note: we can't use pathlib.Path.resolve because it doesn't work for broken
-    links and raises FileNotFoundError in (Python <3.5) and always returns a
-    relative path
+    links (it resolves the target, which may not exist)
 
     """
     link_target = os.readlink(str(path))
