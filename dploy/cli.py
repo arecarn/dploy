@@ -109,6 +109,6 @@ def run(arguments=None):
         except DployError:
             sys.exit(1)
 
-    except (KeyboardInterrupt) as error:
+    except KeyboardInterrupt as error:
         print(error, file=sys.stderr)
         sys.exit(130)

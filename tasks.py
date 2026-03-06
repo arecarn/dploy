@@ -110,5 +110,7 @@ def build(ctx):
     """
     Task to build an executable using pyinstaller
     """
-    cmd = "uv run pyinstaller -n dploy --onefile " + os.path.join("dploy", "__main__.py")
+    cmd = "uv run pyinstaller -n dploy --onefile " + os.path.join(
+        "dploy", "__main__.py"
+    )
     ctx.run(cmd, **RUN_ARGS)

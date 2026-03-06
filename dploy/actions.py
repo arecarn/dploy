@@ -118,7 +118,9 @@ class AlreadyLinked(AbstractBaseAction):
         pass
 
     def __repr__(self):
-        return f"dploy {self.subcmd}: already linked {self.dest} => {self.source_relative}"
+        return (
+            f"dploy {self.subcmd}: already linked {self.dest} => {self.source_relative}"
+        )
 
 
 class AlreadyUnlinked(AbstractBaseAction):

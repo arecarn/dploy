@@ -1,6 +1,7 @@
 """
 Module for the --ignore IGNORE_PATTERN flag and .dploystowignore file
 """
+
 import pathlib
 from dploy import utils
 

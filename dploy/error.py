@@ -1,6 +1,7 @@
 """
 All the exceptions and their messages used by the program
 """
+
 import sys
 
 ERROR_HEAD = "dploy {subcmd}: can not {subcmd} "
