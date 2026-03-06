@@ -7,18 +7,32 @@ from dploy import linkcmd
 from dploy import stowcmd
 
 
-def stow(sources, dest, is_silent=True, is_dry_run=False, ignore_patterns=None):
+def stow(
+    sources,
+    dest,
+    is_silent=True,
+    is_dry_run=False,
+    ignore_patterns=None,
+    dotfiles=False,
+):
     """
     sub command stow
     """
-    stowcmd.Stow(sources, dest, is_silent, is_dry_run, ignore_patterns)
+    stowcmd.Stow(sources, dest, is_silent, is_dry_run, ignore_patterns, dotfiles)
 
 
-def unstow(sources, dest, is_silent=True, is_dry_run=False, ignore_patterns=None):
+def unstow(
+    sources,
+    dest,
+    is_silent=True,
+    is_dry_run=False,
+    ignore_patterns=None,
+    dotfiles=False,
+):
     """
     sub command unstow
     """
-    stowcmd.UnStow(sources, dest, is_silent, is_dry_run, ignore_patterns)
+    stowcmd.UnStow(sources, dest, is_silent, is_dry_run, ignore_patterns, dotfiles)
 
 
 def clean(sources, dest, is_silent=True, is_dry_run=False, ignore_patterns=None):

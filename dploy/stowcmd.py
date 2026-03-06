@@ -19,9 +19,20 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
     """
 
     # pylint: disable=too-many-arguments
-    def __init__(self, subcmd, source, dest, is_silent, is_dry_run, ignore_patterns):
+    def __init__(
+        self,
+        subcmd,
+        source,
+        dest,
+        is_silent,
+        is_dry_run,
+        ignore_patterns,
+        dotfiles=False,
+    ):
         self.is_unfolding = False
-        super().__init__(subcmd, source, dest, is_silent, is_dry_run, ignore_patterns)
+        super().__init__(
+            subcmd, source, dest, is_silent, is_dry_run, ignore_patterns, dotfiles
+        )
 
     def _is_valid_input(self, sources, dest):
         """
@@ -105,7 +116,10 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
                 self.ignore.ignore(subsources)
                 continue
 
-            dest_path = dest / pathlib.Path(subsources.name)
+            dest_name = subsources.name
+            if self.dotfiles and dest_name.startswith("dot-"):
+                dest_name = dest_name.replace("dot-", ".", 1)
+            dest_path = dest / pathlib.Path(dest_name)
 
             does_dest_path_exist = False
             try:
@@ -134,9 +148,17 @@ class Stow(AbstractBaseStow):
 
     # pylint: disable=too-many-arguments
     def __init__(
-        self, source, dest, is_silent=True, is_dry_run=False, ignore_patterns=None
+        self,
+        source,
+        dest,
+        is_silent=True,
+        is_dry_run=False,
+        ignore_patterns=None,
+        dotfiles=False,
     ):
-        super().__init__("stow", source, dest, is_silent, is_dry_run, ignore_patterns)
+        super().__init__(
+            "stow", source, dest, is_silent, is_dry_run, ignore_patterns, dotfiles
+        )
 
     def _unfold(self, source, dest):
         """
@@ -221,9 +243,17 @@ class UnStow(AbstractBaseStow):
 
     # pylint: disable=too-many-arguments
     def __init__(
-        self, source, dest, is_silent=True, is_dry_run=False, ignore_patterns=None
+        self,
+        source,
+        dest,
+        is_silent=True,
+        is_dry_run=False,
+        ignore_patterns=None,
+        dotfiles=False,
     ):
-        super().__init__("unstow", source, dest, is_silent, is_dry_run, ignore_patterns)
+        super().__init__(
+            "unstow", source, dest, is_silent, is_dry_run, ignore_patterns, dotfiles
+        )
 
     def _are_same_file(self, source, dest):
         """
@@ -379,7 +409,15 @@ class Clean(main.AbstractBaseSubCommand):
         self.source = [pathlib.Path(s) for s in source]
         self.dest = pathlib.Path(dest)
         self.ignore_patterns = ignore_patterns
-        super().__init__("clean", source, dest, is_silent, is_dry_run, ignore_patterns)
+        super().__init__(
+            "clean",
+            source,
+            dest,
+            is_silent,
+            is_dry_run,
+            ignore_patterns,
+            dotfiles=False,
+        )
 
     def _is_valid_input(self, sources, dest):
         """

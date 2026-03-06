@@ -1,6 +1,7 @@
 """
 Tests for the stow stub command
 """
+
 # pylint: disable=missing-docstring
 # disable lint errors for function names longer that 30 characters
 # pylint: disable=invalid-name
@@ -238,3 +239,49 @@ def test_stow_unfolding_with_write_only_source_file(source_a, source_b, dest):
     )
     with pytest.raises(error.InsufficientPermissionsToSubcmdFrom):
         dploy.stow([source_a, source_b], dest)
+
+
+def test_stow_with_dotfiles(source_with_dotfiles, dest_with_dotfiles):
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+
+    assert os.readlink(os.path.join(dest_with_dotfiles, ".bbb")) == os.path.join(
+        "..", "source_with_dotfiles", "dot-bbb"
+    )
+    assert os.path.islink(os.path.join(dest_with_dotfiles, "aaa"))
+    assert os.readlink(os.path.join(dest_with_dotfiles, "aaa")) == os.path.join(
+        "..", "source_with_dotfiles", "aaa"
+    )
+    assert not os.path.islink(os.path.join(dest_with_dotfiles, "aaa", "dot-aaa"))
+
+
+def test_stow_with_dot_in_exist_fold_with_dotfiles(
+    source_with_dotfiles, dest_with_dotfiles
+):
+    utils.create_directory(os.path.join(dest_with_dotfiles, "aaa"))
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+
+    assert not os.path.islink(os.path.join(dest_with_dotfiles, "aaa"))
+    assert os.readlink(os.path.join(dest_with_dotfiles, "aaa", ".aaa")) == os.path.join(
+        "..", "..", "source_with_dotfiles", "aaa", "dot-aaa"
+    )
+
+
+def test_stow_with_dot_in_exist_fold_exist_other_with_dotfiles(
+    source_with_dotfiles, dest_with_dotfiles
+):
+    utils.create_directory(os.path.join(dest_with_dotfiles, "aaa"))
+    utils.create_file(os.path.join(dest_with_dotfiles, "aaa", ".keep"))
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+
+    assert os.readlink(os.path.join(dest_with_dotfiles, "aaa", ".aaa")) == os.path.join(
+        "..", "..", "source_with_dotfiles", "aaa", "dot-aaa"
+    )
+
+    assert os.readlink(os.path.join(dest_with_dotfiles, "aaa", ".ccc")) == os.path.join(
+        "..", "..", "source_with_dotfiles", "aaa", "dot-ccc"
+    )
+
+    assert not os.path.islink(
+        os.path.join(dest_with_dotfiles, "aaa", ".ccc", "dot-aaa")
+    )
+    assert not os.path.islink(os.path.join(dest_with_dotfiles, "aaa", ".ccc", "bbb"))

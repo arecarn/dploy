@@ -71,7 +71,16 @@ class AbstractBaseSubCommand:
     """
 
     # pylint: disable=too-many-arguments
-    def __init__(self, subcmd, sources, dest, is_silent, is_dry_run, ignore_patterns):
+    def __init__(
+        self,
+        subcmd,
+        sources,
+        dest,
+        is_silent,
+        is_dry_run,
+        ignore_patterns,
+        dotfiles=False,
+    ):
         self.subcmd = subcmd
 
         self.actions = actions.Actions(is_silent, is_dry_run)
@@ -79,6 +88,7 @@ class AbstractBaseSubCommand:
 
         self.is_silent = is_silent
         self.is_dry_run = is_dry_run
+        self.dotfiles = dotfiles
 
         self.dest_input = pathlib.Path(dest)
         source_inputs = [pathlib.Path(source) for source in sources]

@@ -1,6 +1,7 @@
 """
 Tests for the stow sub command
 """
+
 # pylint: disable=missing-docstring
 # disable lint errors for function names longer that 30 characters
 # pylint: disable=invalid-name
@@ -220,3 +221,42 @@ def test_unstow_folding_with_multiple_sources_with_execute_permission_unset(
     message = str(error.PermissionDenied(subcmd=SUBCMD, file=dest_dir))
     with pytest.raises(error.PermissionDenied, match=message):
         dploy.unstow([source_a], dest)
+
+
+def test_unstow_with_dotfiles(source_with_dotfiles, dest_with_dotfiles):
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+    dploy.unstow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, "aaa"))
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, ".bbb"))
+
+
+def test_unstow_with_dot_in_exist_fold_with_dotfiles(
+    source_with_dotfiles, dest_with_dotfiles
+):
+    utils.create_directory(os.path.join(dest_with_dotfiles, "aaa"))
+
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+    dploy.unstow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+
+    assert not os.path.islink(os.path.join(dest_with_dotfiles, "aaa"))
+    # see https://github.com/arecarn/dploy/issues/15
+    # assert len(os.listdir(os.path.join(dest_with_dotfiles, 'aaa'))) == 0
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, ".bbb"))
+
+
+def test_unstow_with_dot_in_exist_fold_exist_other_with_dotfiles(
+    source_with_dotfiles, dest_with_dotfiles
+):
+    utils.create_directory(os.path.join(dest_with_dotfiles, "aaa"))
+    utils.create_file(os.path.join(dest_with_dotfiles, "aaa", ".keep"))
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+    dploy.unstow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+
+    assert os.path.exists(os.path.join(dest_with_dotfiles, "aaa"))
+    assert not os.path.islink(os.path.join(dest_with_dotfiles, "aaa"))
+
+    assert len(os.listdir(os.path.join(dest_with_dotfiles, "aaa"))) == 1
+    assert os.path.exists(os.path.join(dest_with_dotfiles, "aaa", ".keep"))
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, "aaa", ".aaa"))
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, "aaa", ".ccc"))
