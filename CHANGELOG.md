@@ -8,11 +8,11 @@ organized by order of importance.
 
 ## [Unreleased] - YYYY-MM-DD
 
-### Added
-
 ### Changed
 
-### Fixed
+- Switch to uv for dependency management instead of Poetry.
+- Use hatchling as the build system.
+- Switch CI from Travis CI and AppVeyor to GitHub Actions.
 
 ### Removed
 
