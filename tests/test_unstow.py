@@ -92,7 +92,9 @@ def test_unstow_with_read_only_dest(source_a, dest):
     dploy.stow([source_a], dest)
     utils.remove_write_permission(dest)
     message = str(error.InsufficientPermissionsToSubcmdTo(subcmd=SUBCMD, file=dest))
-    with pytest.raises(error.InsufficientPermissionsToSubcmdTo, match=re.escape(message)):
+    with pytest.raises(
+        error.InsufficientPermissionsToSubcmdTo, match=re.escape(message)
+    ):
         dploy.unstow([source_a], dest)
 
 
@@ -108,7 +110,9 @@ def test_unstow_with_write_only_source(source_a, dest):
     message = str(
         error.InsufficientPermissionsToSubcmdFrom(subcmd=SUBCMD, file=source_a)
     )
-    with pytest.raises(error.InsufficientPermissionsToSubcmdFrom, match=re.escape(message)):
+    with pytest.raises(
+        error.InsufficientPermissionsToSubcmdFrom, match=re.escape(message)
+    ):
         dploy.unstow([source_a], dest)
 
     utils.add_read_permission(source_a)
@@ -118,7 +122,9 @@ def test_unstow_with_dest_with_no_executue_permissions(source_a, dest):
     dploy.stow([source_a], dest)
     utils.remove_execute_permission(dest)
     message = str(error.InsufficientPermissionsToSubcmdTo(subcmd=SUBCMD, file=dest))
-    with pytest.raises(error.InsufficientPermissionsToSubcmdTo, match=re.escape(message)):
+    with pytest.raises(
+        error.InsufficientPermissionsToSubcmdTo, match=re.escape(message)
+    ):
         dploy.unstow([source_a], dest)
 
 
@@ -127,7 +133,9 @@ def test_unstow_with_dest_dir_with_no_executue_permissions(source_a, source_b, d
     dploy.stow([source_a, source_b], dest)
     utils.remove_execute_permission(os.path.join(dest, "aaa"))
     message = str(error.InsufficientPermissionsToSubcmdTo(subcmd=SUBCMD, file=dest_dir))
-    with pytest.raises(error.InsufficientPermissionsToSubcmdTo, match=re.escape(message)):
+    with pytest.raises(
+        error.InsufficientPermissionsToSubcmdTo, match=re.escape(message)
+    ):
         dploy.unstow([source_a, source_b], dest)
 
 

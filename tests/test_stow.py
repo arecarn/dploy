@@ -121,7 +121,9 @@ def test_stow_with_same_simple_directory_used_as_source_and_dest(source_only_fil
 def test_stow_with_read_only_dest(source_a, dest):
     utils.remove_write_permission(dest)
     message = str(error.InsufficientPermissionsToSubcmdTo(subcmd=SUBCMD, file=dest))
-    with pytest.raises(error.InsufficientPermissionsToSubcmdTo, match=re.escape(message)):
+    with pytest.raises(
+        error.InsufficientPermissionsToSubcmdTo, match=re.escape(message)
+    ):
         dploy.stow([source_a], dest)
 
 
@@ -130,7 +132,9 @@ def test_stow_with_write_only_source(source_a, source_c, dest):
     message = str(
         error.InsufficientPermissionsToSubcmdFrom(subcmd=SUBCMD, file=source_a)
     )
-    with pytest.raises(error.InsufficientPermissionsToSubcmdFrom, match=re.escape(message)):
+    with pytest.raises(
+        error.InsufficientPermissionsToSubcmdFrom, match=re.escape(message)
+    ):
         dploy.stow([source_a, source_c], dest)
 
 
@@ -139,7 +143,9 @@ def test_stow_with_source_with_no_executue_permissions(source_a, source_c, dest)
     message = str(
         error.InsufficientPermissionsToSubcmdFrom(subcmd=SUBCMD, file=source_a)
     )
-    with pytest.raises(error.InsufficientPermissionsToSubcmdFrom, match=re.escape(message)):
+    with pytest.raises(
+        error.InsufficientPermissionsToSubcmdFrom, match=re.escape(message)
+    ):
         dploy.stow([source_a, source_c], dest)
 
 
@@ -149,7 +155,9 @@ def test_stow_with_source_dir_with_no_executue_permissions(source_a, source_c, d
     message = str(
         error.InsufficientPermissionsToSubcmdFrom(subcmd=SUBCMD, file=source_dir)
     )
-    with pytest.raises(error.InsufficientPermissionsToSubcmdFrom, match=re.escape(message)):
+    with pytest.raises(
+        error.InsufficientPermissionsToSubcmdFrom, match=re.escape(message)
+    ):
         dploy.stow([source_a, source_c], dest)
 
 
