@@ -3,9 +3,15 @@ This module contains the actions that are combined to perform dploy's sub
 commands
 """
 
+from __future__ import annotations
+
 from collections import defaultdict
+from typing import TYPE_CHECKING
 
 from dploy import utils
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class Actions:
@@ -13,12 +19,12 @@ class Actions:
     A class that collects and executes action objects
     """
 
-    def __init__(self, is_silent, is_dry_run) -> None:
-        self.actions = []
+    def __init__(self, is_silent: bool, is_dry_run: bool) -> None:
+        self.actions: list[AbstractBaseAction] = []
         self.is_silent = is_silent
         self.is_dry_run = is_dry_run
 
-    def add(self, action) -> None:
+    def add(self, action: AbstractBaseAction) -> None:
         """
         Adds an action
         """
@@ -34,13 +40,13 @@ class Actions:
             if not self.is_dry_run:
                 action.execute()
 
-    def get_unlink_actions(self):
+    def get_unlink_actions(self) -> list[UnLink]:
         """
         get the current Unlink() actions from the self.actions
         """
         return [a for a in self.actions if isinstance(a, UnLink)]
 
-    def get_unlink_target_parents(self):
+    def get_unlink_target_parents(self) -> list[Path]:
         """
         Get list of the parents for the current Unlink() actions from
         self.actions
@@ -49,7 +55,7 @@ class Actions:
         # sort for deterministic output
         return sorted({a.target.parent for a in unlink_actions})
 
-    def get_unlink_targets(self):
+    def get_unlink_targets(self) -> list[Path]:
         """
         Get list of the targets for the current Unlink() actions from
         self.actions
@@ -57,7 +63,7 @@ class Actions:
         unlink_actions = self.get_unlink_actions()
         return [a.target for a in unlink_actions]
 
-    def get_duplicates(self):
+    def get_duplicates(self) -> list[list[int]]:
         """
         return a tuple containing tuples with the following structure
         (link destination, [indices of duplicates])
@@ -89,7 +95,7 @@ class SymbolicLink(AbstractBaseAction):
     Action to create a symbolic link relative to the source of the link
     """
 
-    def __init__(self, subcmd, source, dest) -> None:
+    def __init__(self, subcmd: str, source: Path, dest: Path) -> None:
         super().__init__()
         self.source = source
         self.source_relative = utils.get_relative_path(source, dest.parent)
@@ -108,7 +114,7 @@ class AlreadyLinked(AbstractBaseAction):
     Action to used to print an already linked message
     """
 
-    def __init__(self, subcmd, source, dest) -> None:
+    def __init__(self, subcmd: str, source: Path, dest: Path) -> None:
         super().__init__()
         self.source = source
         self.source_relative = utils.get_relative_path(source, dest.parent)
@@ -129,7 +135,7 @@ class AlreadyUnlinked(AbstractBaseAction):
     Action to used to print an already unlinked message
     """
 
-    def __init__(self, subcmd, source, dest) -> None:
+    def __init__(self, subcmd: str, source: Path, dest: Path) -> None:
         super().__init__()
         self.source = source
         self.source_relative = utils.get_relative_path(source, dest.parent)
@@ -148,7 +154,7 @@ class UnLink(AbstractBaseAction):
     Action to unlink a symbolic link
     """
 
-    def __init__(self, subcmd, target) -> None:
+    def __init__(self, subcmd: str, target: Path) -> None:
         super().__init__()
         self.target = target
         self.subcmd = subcmd
@@ -169,7 +175,7 @@ class MakeDirectory(AbstractBaseAction):
     Action to create a directory
     """
 
-    def __init__(self, subcmd, target) -> None:
+    def __init__(self, subcmd: str, target: Path) -> None:
         super().__init__()
         self.target = target
         self.subcmd = subcmd
@@ -186,7 +192,7 @@ class RemoveDirectory(AbstractBaseAction):
     Action to remove a directory
     """
 
-    def __init__(self, subcmd, target) -> None:
+    def __init__(self, subcmd: str, target: Path) -> None:
         super().__init__()
         self.target = target
         self.subcmd = subcmd

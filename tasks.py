@@ -2,9 +2,15 @@
 Project Tasks that can be invoked using using the program "invoke" or "inv"
 """
 
+from __future__ import annotations
+
 import os
+from typing import TYPE_CHECKING
 
 from invoke import task
+
+if TYPE_CHECKING:
+    from invoke import Context
 
 # disable the check for unused-arguments to ignore unused ctx parameter in tasks
 # pylint: disable=unused-argument
@@ -17,7 +23,7 @@ else:
     RUN_ARGS = {"pty": True}
 
 
-def get_files():
+def get_files() -> str:
     """
     Get the files to run analysis on
     """
@@ -31,7 +37,7 @@ def get_files():
 
 
 @task
-def setup(ctx) -> None:
+def setup(ctx: Context) -> None:
     """
     Install python requirements
     """
@@ -39,7 +45,7 @@ def setup(ctx) -> None:
 
 
 @task
-def clean(ctx) -> None:
+def clean(ctx: Context) -> None:
     """
     Clean repository using git
     """
@@ -47,20 +53,19 @@ def clean(ctx) -> None:
 
 
 @task
-def lint(ctx):
+def lint(ctx: Context) -> None:
     """
     Run pylint, ruff, and ty on this module
     """
     cmds = ["pylint --output-format=parseable", "ruff check", "ty check"]
     base_cmd = "uv run {cmd} {files}"
 
-
     for cmd in cmds:
         ctx.run(base_cmd.format(cmd=cmd, files=get_files()), **RUN_ARGS)
 
 
 @task
-def reformat_check(ctx) -> None:
+def reformat_check(ctx: Context) -> None:
     """
     Run formatting check
     """
@@ -70,7 +75,7 @@ def reformat_check(ctx) -> None:
 
 
 @task
-def reformat(ctx) -> None:
+def reformat(ctx: Context) -> None:
     """
     Run formatting
     """
@@ -80,7 +85,7 @@ def reformat(ctx) -> None:
 
 
 @task
-def metrics(ctx) -> None:
+def metrics(ctx: Context) -> None:
     """
     Run radon code metrics on this module
     """
@@ -91,7 +96,7 @@ def metrics(ctx) -> None:
 
 
 @task()
-def test(ctx) -> None:
+def test(ctx: Context) -> None:
     """
     Test Task
     """
@@ -101,14 +106,14 @@ def test(ctx) -> None:
 
 # pylint: disable=redefined-builtin
 @task(test, lint, reformat_check, metrics)
-def all(ctx) -> None:
+def all(ctx: Context) -> None:
     """
     Run all CI tasks: test, lint, reformat_check, and metrics
     """
 
 
 @task(clean)
-def build(ctx) -> None:
+def build(ctx: Context) -> None:
     """
     Task to build an executable using pyinstaller
     """

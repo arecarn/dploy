@@ -2,10 +2,17 @@
 The logic and workings behind the stow and unstow sub-commands
 """
 
+from __future__ import annotations
+
 import pathlib
 from collections import defaultdict
+from typing import TYPE_CHECKING
 
 from dploy import actions, error, ignore
+
+if TYPE_CHECKING:
+    from pathlib import Path
+    from typing import Sequence
 
 
 class Input:
@@ -13,11 +20,11 @@ class Input:
     Input validator abstract base class
     """
 
-    def __init__(self, errors, subcmd) -> None:
+    def __init__(self, errors: error.Errors, subcmd: str) -> None:
         self.errors = errors
         self.subcmd = subcmd
 
-    def is_valid(self, sources, dest):
+    def is_valid(self, sources: Sequence[Path], dest: Path) -> bool:
         """
         Checks if the passes in source and dest are valid
         """
@@ -31,14 +38,14 @@ class Input:
 
         return is_input_valid
 
-    def _is_there_duplicate_sources(self, sources):
+    def _is_there_duplicate_sources(self, sources: Sequence[Path]) -> bool:
         """
         Checks sources to see if there are any duplicates
         """
 
         is_there_duplicates = False
 
-        tally = defaultdict(int)
+        tally: dict[Path, int] = defaultdict(int)
         for source in sources:
             tally[source] += 1
 
@@ -49,13 +56,13 @@ class Input:
 
         return is_there_duplicates
 
-    def _is_valid_dest(self, dest) -> bool:
+    def _is_valid_dest(self, dest: Path) -> bool:
         """
         Abstract method to check if the dest input to a sub-command is valid
         """
         return True
 
-    def _is_valid_source(self, source) -> bool:
+    def _is_valid_source(self, source: Path) -> bool:
         """
         Abstract method to check if the source input to a sub-command is valid
         """
@@ -67,7 +74,15 @@ class AbstractBaseSubCommand:
     An abstract class to unify shared functionality in stow commands
     """
 
-    def __init__(self, subcmd, sources, dest, is_silent, is_dry_run, ignore_patterns) -> None:
+    def __init__(
+        self,
+        subcmd: str,
+        sources: Sequence[str | Path],
+        dest: str | Path,
+        is_silent: bool,
+        is_dry_run: bool,
+        ignore_patterns: list[str] | None,
+    ) -> None:
         self.subcmd = subcmd
 
         self.actions = actions.Actions(is_silent, is_dry_run)
@@ -98,12 +113,13 @@ class AbstractBaseSubCommand:
         need to be added or if some actions need to be removed.
         """
 
-    def _is_valid_input(self, sources, dest) -> None:
+    def _is_valid_input(self, sources: Sequence[Path], dest: Path) -> bool:
         """
         Abstract method to check if the input to a sub-command is valid
         """
+        return True
 
-    def _collect_actions(self, source, dest) -> None:
+    def _collect_actions(self, source: Path, dest: Path) -> None:
         """
         Abstract method that collects the actions required to complete a
         sub-command.

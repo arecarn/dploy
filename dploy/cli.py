@@ -2,14 +2,20 @@
 The command line interface
 """
 
+from __future__ import annotations
+
 import argparse
 import sys
+from typing import TYPE_CHECKING
 
 from dploy import linkcmd, stowcmd, version
 from dploy.error import DployError
 
+if TYPE_CHECKING:
+    from typing import Sequence
 
-def add_ignore_argument(parser) -> None:
+
+def add_ignore_argument(parser: argparse.ArgumentParser) -> None:
     """
     adds the ignore argument to a subcmd parser
     """
@@ -22,7 +28,7 @@ def add_ignore_argument(parser) -> None:
     )
 
 
-def create_parser():
+def create_parser() -> argparse.ArgumentParser:
     """
     create the CLI argument parser
     """
@@ -71,7 +77,7 @@ def create_parser():
     return parser
 
 
-def run(arguments=None) -> None:
+def run(arguments: Sequence[str] | None = None) -> None:
     """
     interpret the parser arguments and execute the corresponding commands
     """

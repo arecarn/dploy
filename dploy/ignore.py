@@ -2,9 +2,16 @@
 Module for the --ignore IGNORE_PATTERN flag and .dploystowignore file
 """
 
+from __future__ import annotations
+
 import pathlib
+from typing import TYPE_CHECKING
 
 from dploy import utils
+
+if TYPE_CHECKING:
+    from pathlib import Path
+    from typing import Sequence
 
 
 class Ignore:
@@ -13,9 +20,9 @@ class Ignore:
     in a specified ignore file.
     """
 
-    def __init__(self, patterns, source) -> None:
+    def __init__(self, patterns: Sequence[str] | None, source: Path) -> None:
         input_patterns = [] if patterns is None else patterns
-        self.ignored_files = []
+        self.ignored_files: list[Path] = []
 
         file = source.parent / pathlib.Path(".dploystowignore")
 
@@ -23,7 +30,7 @@ class Ignore:
         self.patterns.extend(input_patterns)
         self._read_ignore_file_patterns(file)
 
-    def _read_ignore_file_patterns(self, file) -> None:
+    def _read_ignore_file_patterns(self, file: Path) -> None:
         """
         read ignore patterns from a specified file
         """
@@ -34,7 +41,7 @@ class Ignore:
         except FileNotFoundError:
             pass
 
-    def should_ignore(self, source) -> bool:
+    def should_ignore(self, source: Path) -> bool:
         """
         check if a source should be ignored, based on the ignore patterns in
         self.patterns
@@ -53,13 +60,13 @@ class Ignore:
                     return True
         return False
 
-    def ignore(self, file) -> None:
+    def ignore(self, file: Path) -> None:
         """
         add a file to be ignored
         """
         self.ignored_files.append(file)
 
-    def get_ignored_files(self):
+    def get_ignored_files(self) -> list[Path]:
         """
         get a list of the files that have been ignored
         """

@@ -2,10 +2,17 @@
 The logic and workings behind the stow and unstow sub-commands
 """
 
+from __future__ import annotations
+
 import pathlib
 from collections import Counter
+from typing import TYPE_CHECKING
 
 from dploy import actions, error, ignore, main, utils
+
+if TYPE_CHECKING:
+    from pathlib import Path
+    from typing import Sequence
 
 
 class AbstractBaseStow(main.AbstractBaseSubCommand):
@@ -14,21 +21,29 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
     commands
     """
 
-    def __init__(self, subcmd, source, dest, is_silent, is_dry_run, ignore_patterns) -> None:
+    def __init__(
+        self,
+        subcmd: str,
+        source: Sequence[str | Path],
+        dest: str | Path,
+        is_silent: bool,
+        is_dry_run: bool,
+        ignore_patterns: list[str] | None,
+    ) -> None:
         self.is_unfolding = False
         super().__init__(subcmd, source, dest, is_silent, is_dry_run, ignore_patterns)
 
-    def _is_valid_input(self, sources, dest):
+    def _is_valid_input(self, sources: Sequence[Path], dest: Path) -> bool:
         """
         Check to see if the input is valid
         """
         return StowInput(self.errors, self.subcmd).is_valid(sources, dest)
 
-    def get_directory_contents(self, directory):
+    def get_directory_contents(self, directory: Path) -> list[Path]:
         """
         Get the contents of a directory while handling errors that may occur
         """
-        contents = []
+        contents: list[Path] = []
 
         try:
             contents = utils.get_directory_contents(directory)
@@ -41,25 +56,25 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
 
         return contents
 
-    def _are_same_file(self, source, dest) -> None:
+    def _are_same_file(self, source: Path, dest: Path) -> None:
         """
         Abstract method that handles the case when the source and dest are the
         same file when collecting actions
         """
 
-    def _are_directories(self, source, dest) -> None:
+    def _are_directories(self, source: Path, dest: Path) -> None:
         """
         Abstract method that handles the case when the source and dest are directories
         same file when collecting actions
         """
 
-    def _are_other(self, source, dest) -> None:
+    def _are_other(self, source: Path, dest: Path) -> None:
         """
         Abstract method that handles all other cases what to do if no particular
         condition is true cases are found
         """
 
-    def _collect_actions_existing_dest(self, source, dest) -> None:
+    def _collect_actions_existing_dest(self, source: Path, dest: Path) -> None:
         """
         _collect_actions() helper to collect required actions to perform a stow
         command when the destination already exists
@@ -70,12 +85,12 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
             else:
                 self.errors.add(error.SourceIsSameAsDest(self.subcmd, dest.parent))
 
-        elif dest.is_dir() and source.is_dir:
+        elif dest.is_dir() and source.is_dir():
             self._are_directories(source, dest)
         else:
             self.errors.add(error.ConflictsWithExistingFile(self.subcmd, source, dest))
 
-    def _collect_actions(self, source, dest) -> None:
+    def _collect_actions(self, source: Path, dest: Path) -> None:
         """
         Concrete method to collect required actions to perform a stow
         sub-command
@@ -124,11 +139,16 @@ class Stow(AbstractBaseStow):
     """
 
     def __init__(
-        self, source, dest, is_silent=True, is_dry_run=False, ignore_patterns=None
+        self,
+        source: Sequence[str | Path],
+        dest: str | Path,
+        is_silent: bool = True,
+        is_dry_run: bool = False,
+        ignore_patterns: list[str] | None = None,
     ) -> None:
         super().__init__("stow", source, dest, is_silent, is_dry_run, ignore_patterns)
 
-    def _unfold(self, source, dest) -> None:
+    def _unfold(self, source: Path, dest: Path) -> None:
         """
         Method unfold a destination directory
         """
@@ -154,23 +174,28 @@ class Stow(AbstractBaseStow):
             first_action = self.actions.actions[indices[0]]
             remaining_actions = [self.actions.actions[i] for i in indices[1:]]
 
-            if first_action.source.is_dir():
-                self._unfold(first_action.source, first_action.dest)
+            if isinstance(first_action, actions.SymbolicLink):
+                if first_action.source.is_dir():
+                    self._unfold(first_action.source, first_action.dest)
 
-                for action in remaining_actions:
-                    self.is_unfolding = True
-                    self._collect_actions(action.source, action.dest)
-                    self.is_unfolding = False
-            else:
-                duplicate_action_sources = [
-                    str(self.actions.actions[i].source) for i in indices
-                ]
-                self.errors.add(
-                    error.ConflictsWithAnotherSource(
-                        self.subcmd, duplicate_action_sources
+                    for action in remaining_actions:
+                        if isinstance(action, actions.SymbolicLink):
+                            self.is_unfolding = True
+                            self._collect_actions(action.source, action.dest)
+                            self.is_unfolding = False
+                else:
+                    duplicate_action_sources = []
+                    for i in indices:
+                        action = self.actions.actions[i]
+                        if isinstance(action, actions.SymbolicLink):
+                            duplicate_action_sources.append(str(action.source))
+
+                    self.errors.add(
+                        error.ConflictsWithAnotherSource(
+                            self.subcmd, duplicate_action_sources
+                        )
                     )
-                )
-                has_conflicts = True
+                    has_conflicts = True
 
         if has_conflicts:
             return
@@ -185,7 +210,7 @@ class Stow(AbstractBaseStow):
     def _check_for_other_actions(self) -> None:
         self._handle_duplicate_actions()
 
-    def _are_same_file(self, source, dest) -> None:
+    def _are_same_file(self, source: Path, dest: Path) -> None:
         """
         what to do if source and dest are the same files
         """
@@ -194,12 +219,12 @@ class Stow(AbstractBaseStow):
         else:
             self.actions.add(actions.AlreadyLinked(self.subcmd, source, dest))
 
-    def _are_directories(self, source, dest) -> None:
+    def _are_directories(self, source: Path, dest: Path) -> None:
         if dest.is_symlink():
             self._unfold(dest.resolve(), dest)
         self._collect_actions(source, dest)
 
-    def _are_other(self, source, dest) -> None:
+    def _are_other(self, source: Path, dest: Path) -> None:
         self.actions.add(actions.SymbolicLink(self.subcmd, source, dest))
 
 
@@ -209,20 +234,25 @@ class UnStow(AbstractBaseStow):
     """
 
     def __init__(
-        self, source, dest, is_silent=True, is_dry_run=False, ignore_patterns=None
+        self,
+        source: Sequence[str | Path],
+        dest: str | Path,
+        is_silent: bool = True,
+        is_dry_run: bool = False,
+        ignore_patterns: list[str] | None = None,
     ) -> None:
         super().__init__("unstow", source, dest, is_silent, is_dry_run, ignore_patterns)
 
-    def _are_same_file(self, source, dest) -> None:
+    def _are_same_file(self, source: Path, dest: Path) -> None:
         """
         what to do if source and dest are the same files
         """
         self.actions.add(actions.UnLink(self.subcmd, dest))
 
-    def _are_directories(self, source, dest) -> None:
+    def _are_directories(self, source: Path, dest: Path) -> None:
         self._collect_actions(source, dest)
 
-    def _are_other(self, source, dest) -> None:
+    def _are_other(self, source: Path, dest: Path) -> None:
         self.actions.add(actions.AlreadyUnlinked(self.subcmd, source, dest))
 
     def _check_for_other_actions(self) -> None:
@@ -235,9 +265,9 @@ class UnStow(AbstractBaseStow):
         """
         for parent in self.actions.get_unlink_target_parents():
             items = utils.get_directory_contents(parent)
-            other_links_parents = []
-            other_links = []
-            source_parent = None
+            other_links_parents: list[Path] = []
+            other_links: list[Path] = []
+            source_parent: Path | None = None
             is_normal_files_detected = False
 
             for item in items:
@@ -250,8 +280,9 @@ class UnStow(AbstractBaseStow):
                         return
 
                     if does_item_exist and item.is_symlink():
-                        source_parent = item.resolve().parent
-                        other_links_parents.append(item.resolve().parent)
+                        resolved_parent = item.resolve().parent
+                        source_parent = resolved_parent
+                        other_links_parents.append(resolved_parent)
                         other_links.append(item)
                     else:
                         is_normal_files_detected = True
@@ -272,7 +303,7 @@ class UnStow(AbstractBaseStow):
                 ):
                     self.actions.add(actions.RemoveDirectory(self.subcmd, parent))
 
-    def _fold(self, source, dest) -> None:
+    def _fold(self, source: Path, dest: Path) -> None:
         """
         add the required actions for folding
         """
@@ -286,7 +317,7 @@ class StowInput(main.Input):
     Input validator for the link command
     """
 
-    def _is_valid_dest(self, dest):
+    def _is_valid_dest(self, dest: Path) -> bool:
         """
         Check if the test argument is valid
         """
@@ -316,7 +347,7 @@ class StowInput(main.Input):
 
         return result
 
-    def _is_valid_source(self, source):
+    def _is_valid_source(self, source: Path) -> bool:
         """
         Check if the source argument is valid
         """
@@ -340,7 +371,7 @@ class StowInput(main.Input):
 
         return result
 
-    def is_valid_collection_input(self, source, dest):
+    def is_valid_collection_input(self, source: Path, dest: Path) -> bool:
         """
         Helper to validate the source and dest parameters passed to
         _collect_actions()
@@ -360,23 +391,30 @@ class Clean(main.AbstractBaseSubCommand):
     commands
     """
 
-    def __init__(self, source, dest, is_silent, is_dry_run, ignore_patterns) -> None:
+    def __init__(
+        self,
+        source: Sequence[str | Path],
+        dest: str | Path,
+        is_silent: bool,
+        is_dry_run: bool,
+        ignore_patterns: list[str] | None,
+    ) -> None:
         self.source = [pathlib.Path(s) for s in source]
         self.dest = pathlib.Path(dest)
         self.ignore_patterns = ignore_patterns
         super().__init__("clean", source, dest, is_silent, is_dry_run, ignore_patterns)
 
-    def _is_valid_input(self, sources, dest):
+    def _is_valid_input(self, sources: Sequence[Path], dest: Path) -> bool:
         """
         Check to see if the input is valid
         """
         return StowInput(self.errors, self.subcmd).is_valid(sources, dest)
 
-    def get_directory_contents(self, directory):
+    def get_directory_contents(self, directory: Path) -> list[Path]:
         """
         Get the contents of a directory while handling errors that may occur
         """
-        contents = []
+        contents: list[Path] = []
 
         try:
             contents = utils.get_directory_contents(directory)
@@ -389,13 +427,15 @@ class Clean(main.AbstractBaseSubCommand):
 
         return contents
 
-    def _collect_clean_actions(self, source, source_names, dest) -> None:
+    def _collect_clean_actions(
+        self, source: Sequence[Path], source_names: set[str], dest: Path
+    ) -> None:
         subdests = utils.get_directory_contents(dest)
         for subdest in subdests:
             if subdest.is_symlink():
                 link_target = utils.readlink(subdest, absolute_target=True)
                 if not link_target.exists() and not source_names.isdisjoint(
-                    set(link_target.parents)
+                    set(str(p) for p in link_target.parents)
                 ):
                     self.actions.add(actions.UnLink(self.subcmd, subdest))
             elif subdest.is_dir():
@@ -406,7 +446,7 @@ class Clean(main.AbstractBaseSubCommand):
         Concrete method to collect required actions to perform a stow
         sub-command
         """
-        valid_files = []
+        valid_files: list[Path] = []
         for a_file in self.source:
             self.ignore = ignore.Ignore(self.ignore_patterns, a_file)
             if self.ignore.should_ignore(a_file):
@@ -422,6 +462,6 @@ class Clean(main.AbstractBaseSubCommand):
 
         # NOTE: an option to make clean more aggressive is to change f.name to
         # f.parent this could a be a good --option
-        files_names = [utils.get_absolute_path(f.name) for f in valid_files]
+        files_names = [str(utils.get_absolute_path(f.name)) for f in valid_files]
         files_names_set = set(files_names)
         self._collect_clean_actions(valid_files, files_names_set, self.dest)
