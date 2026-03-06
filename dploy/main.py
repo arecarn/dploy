@@ -9,7 +9,6 @@ from dploy import error
 from dploy import ignore
 
 
-# pylint: disable=too-few-public-methods
 class Input:
     """
     Input validator abstract base class
@@ -62,13 +61,11 @@ class Input:
         """
 
 
-# pylint: disable=too-few-public-methods
 class AbstractBaseSubCommand:
     """
     An abstract class to unify shared functionality in stow commands
     """
 
-    # pylint: disable=too-many-arguments, too-many-positional-arguments
     def __init__(self, subcmd, sources, dest, is_silent, is_dry_run, ignore_patterns):
         self.subcmd = subcmd
 

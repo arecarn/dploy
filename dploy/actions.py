@@ -70,7 +70,6 @@ class Actions:
 
 
 class AbstractBaseAction:
-    # pylint: disable=too-few-public-methods
     """
     An abstract base class that define the interface for actions
     """
@@ -85,7 +84,6 @@ class AbstractBaseAction:
 
 
 class SymbolicLink(AbstractBaseAction):
-    # pylint: disable=too-few-public-methods
     """
     Action to create a symbolic link relative to the source of the link
     """
@@ -105,7 +103,6 @@ class SymbolicLink(AbstractBaseAction):
 
 
 class AlreadyLinked(AbstractBaseAction):
-    # pylint: disable=too-few-public-methods
     """
     Action to used to print an already linked message
     """
@@ -125,7 +122,6 @@ class AlreadyLinked(AbstractBaseAction):
 
 
 class AlreadyUnlinked(AbstractBaseAction):
-    # pylint: disable=too-few-public-methods
     """
     Action to used to print an already unlinked message
     """
@@ -145,7 +141,6 @@ class AlreadyUnlinked(AbstractBaseAction):
 
 
 class UnLink(AbstractBaseAction):
-    # pylint: disable=too-few-public-methods
     """
     Action to unlink a symbolic link
     """
@@ -157,7 +152,6 @@ class UnLink(AbstractBaseAction):
 
     def execute(self):
         if not self.target.is_symlink():
-            # pylint: disable=line-too-long
             raise RuntimeError(
                 f"dploy detected and aborted an attempt to unlink a non-symlink {self.target} this is a bug and should be reported"
             )
@@ -168,7 +162,6 @@ class UnLink(AbstractBaseAction):
 
 
 class MakeDirectory(AbstractBaseAction):
-    # pylint: disable=too-few-public-methods
     """
     Action to create a directory
     """
@@ -186,7 +179,6 @@ class MakeDirectory(AbstractBaseAction):
 
 
 class RemoveDirectory(AbstractBaseAction):
-    # pylint: disable=too-few-public-methods
     """
     Action to remove a directory
     """

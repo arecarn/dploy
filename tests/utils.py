@@ -38,7 +38,6 @@ def create_directory(directory_name):
 
 
 class ChangeDirectory:
-    # pylint: disable=too-few-public-methods
     """
     Context manager for changing the current working directory
     """

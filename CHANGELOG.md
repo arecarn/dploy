@@ -13,6 +13,7 @@ organized by order of importance.
 - Switch to uv for dependency management instead of Poetry.
 - Use hatchling as the build system.
 - Switch CI from Travis CI and AppVeyor to GitHub Actions.
+- Move Pylint configuration to pyproject.toml and remove in-code suppressions.
 
 ### Removed
 

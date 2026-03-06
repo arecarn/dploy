@@ -8,13 +8,11 @@ from dploy import error
 from dploy import main
 
 
-# pylint: disable=too-few-public-methods
 class Link(main.AbstractBaseSubCommand):
     """
     Concrete class implementation of the link sub-command
     """
 
-    # pylint: disable=too-many-arguments, too-many-positional-arguments
     def __init__(
         self, source, dest, is_silent=True, is_dry_run=False, ignore_patterns=None
     ):

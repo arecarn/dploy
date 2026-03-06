@@ -32,10 +32,6 @@ class Errors:
             raise self.exceptions[0]
 
 
-# pylint: disable=missing-docstring
-# pylint: disable=too-few-public-methods
-
-
 class DployError(Exception):
     pass
 

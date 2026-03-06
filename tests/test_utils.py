@@ -2,9 +2,6 @@
 Tests for stow utils file
 """
 
-# pylint: disable=missing-docstring
-# disable lint errors for function names longer that 30 characters
-# pylint: disable=invalid-name
 
 import os
 import pathlib

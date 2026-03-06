@@ -11,14 +11,12 @@ from dploy import main
 from dploy import ignore
 
 
-# pylint: disable=too-few-public-methods
 class AbstractBaseStow(main.AbstractBaseSubCommand):
     """
     Abstract Base class that contains the shared logic for all of the stow
     commands
     """
 
-    # pylint: disable=too-many-arguments, too-many-positional-arguments
     def __init__(self, subcmd, source, dest, is_silent, is_dry_run, ignore_patterns):
         self.is_unfolding = False
         super().__init__(subcmd, source, dest, is_silent, is_dry_run, ignore_patterns)
@@ -123,13 +121,11 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
                 self._are_other(subsources, dest_path)
 
 
-# pylint: disable=too-few-public-methods
 class Stow(AbstractBaseStow):
     """
     Concrete class implementation of the stow sub-command
     """
 
-    # pylint: disable=too-many-arguments, too-many-positional-arguments
     def __init__(
         self, source, dest, is_silent=True, is_dry_run=False, ignore_patterns=None
     ):
@@ -210,13 +206,11 @@ class Stow(AbstractBaseStow):
         self.actions.add(actions.SymbolicLink(self.subcmd, source, dest))
 
 
-# pylint: disable=too-few-public-methods
 class UnStow(AbstractBaseStow):
     """
     Concrete class implementation of the unstow sub-command
     """
 
-    # pylint: disable=too-many-arguments, too-many-positional-arguments
     def __init__(
         self, source, dest, is_silent=True, is_dry_run=False, ignore_patterns=None
     ):
@@ -364,14 +358,12 @@ class StowInput(main.Input):
         return result
 
 
-# pylint: disable=too-few-public-methods
 class Clean(main.AbstractBaseSubCommand):
     """
     Abstract Base class that contains the shared logic for all of the stow
     commands
     """
 
-    # pylint: disable=too-many-arguments, too-many-positional-arguments
     def __init__(self, source, dest, is_silent, is_dry_run, ignore_patterns):
         self.source = [pathlib.Path(s) for s in source]
         self.dest = pathlib.Path(dest)

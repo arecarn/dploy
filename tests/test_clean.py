@@ -1,9 +1,6 @@
 """
 Tests for the link sub command
 """
-# pylint: disable=missing-docstring
-# disable lint errors for function names longer that 30 characters
-# pylint: disable=invalid-name
 
 import os
 import dploy

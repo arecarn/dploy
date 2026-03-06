@@ -34,3 +34,19 @@ dev = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.pylint.messages_control]
+disable = [
+    "locally-disabled",
+    "duplicate-code",
+    "len-as-condition",
+    "too-few-public-methods",
+    "too-many-arguments",
+    "too-many-positional-arguments",
+    "line-too-long",
+    "missing-docstring",
+    "invalid-name",
+]
+
+[tool.pylint.REPORTS]
+reports = "no"

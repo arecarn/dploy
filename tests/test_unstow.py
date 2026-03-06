@@ -1,10 +1,6 @@
 """
 Tests for the stow sub command
 """
-# pylint: disable=missing-docstring
-# disable lint errors for function names longer that 30 characters
-# pylint: disable=invalid-name
-# pylint: disable=line-too-long
 
 import os
 import pytest
