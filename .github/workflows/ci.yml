@@ -20,6 +20,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Enable symlinks on Windows
+        if: runner.os == 'Windows'
+        run: |
+          reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /v "AllowDevelopmentWithoutDevLicense" /d 1 /f
+          git config --global core.symlinks true
+
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
