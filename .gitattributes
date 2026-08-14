@@ -1,0 +1,5 @@
+# This checkout is shared between Windows and Linux (via Dropbox), so the same
+# physical files are opened by both. Normalize to LF everywhere -- including in
+# the working tree on Windows -- so that editing from one side does not rewrite
+# every file from the other side's point of view.
+* text=auto eol=lf
