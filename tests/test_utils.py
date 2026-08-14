@@ -16,15 +16,8 @@ if TYPE_CHECKING:
     from typing import Any
 
 
-@pytest.mark.skipif(
-    os.name == "nt",
-    reason=(
-        "#27: a drive-relative target like /source/bbb comes back from "
-        "os.readlink with the current drive prepended on Windows"
-    ),
-)
 def test_readlink_with_broken_absolute_target(dest: Any) -> None:
-    target = os.path.join("/", "source_only_files", "bbb")
+    target = os.path.abspath(os.path.join("/", "source_only_files", "bbb"))
     dest_path = os.path.join(dest, "bbb")
     os.symlink(target, dest_path)
     assert utils.readlink(dest_path) == pathlib.Path(target)
@@ -55,10 +48,6 @@ def test_readlink_with_relative_target(dest: Any, source_a: Any) -> None:
     assert utils.readlink(dest_path, absolute_target=True).exists()
 
 
-@pytest.mark.skipif(
-    os.name == "nt",
-    reason="#27: os.readlink returns a \\\\?\\ extended-length path on Windows",
-)
 def test_readlink_with_absolute_target(dest: Any, source_a: Any) -> None:
     target = os.path.join(source_a, "aaa")
     dest_path = os.path.join(dest, "bbb")

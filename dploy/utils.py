@@ -39,19 +39,18 @@ def is_same_file(file1: Path, file2: Path) -> bool:
     """
     test if two pathlib.Path() objects are the same file
 
-    TODO: consider using pathlib.Path.samefile() instead
     NOTE: this can raise exception FileNotFoundError
     """
-    return file1.resolve() == file2.resolve()
+    return file1.samefile(file2)
 
 
 def is_same_files(files1: Sequence[Path], files2: Sequence[Path]) -> bool:
     """
     test if two collection of files are equivalent
     """
-    files1_resolved = [f.resolve() for f in files1]
-    files2_resolved = [f.resolve() for f in files2]
-    return files1_resolved == files2_resolved
+    if len(files1) != len(files2):
+        return False
+    return all(f1.samefile(f2) for f1, f2 in zip(files1, files2))
 
 
 def get_absolute_path(file: str | Path) -> Path:
@@ -119,9 +118,11 @@ def readlink(path: Path, absolute_target: bool = False) -> Path:
 
     Note: we can't use pathlib.Path.resolve because it doesn't work for broken
     links (it resolves the target, which may not exist)
-
     """
     link_target = os.readlink(str(path))
+    if os.name == "nt" and link_target.startswith("\\\\?\\"):
+        link_target = link_target[4:]
+
     path_dir = os.path.dirname(str(path))
     if absolute_target:
         if not os.path.isabs(link_target):

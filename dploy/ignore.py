@@ -7,8 +7,6 @@ from __future__ import annotations
 import pathlib
 from typing import TYPE_CHECKING
 
-from dploy import utils
-
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
@@ -47,17 +45,22 @@ class Ignore:
         self.patterns
 
         This checks if the ignore patterns match either the file exactly or
-        its parents
+        one of its children (to allow pruning directories)
         """
         for pattern in self.patterns:
+            # Check if the source itself matches the pattern
+            if source.match(pattern):
+                return True
+
+            # Check if any of its children match the pattern (pruning behavior)
             try:
-                files = sorted(source.parent.glob(pattern))
-            except IndexError:  # the glob result was empty
+                # We use glob on the source itself. If it matches anything,
+                # then this directory should be ignored.
+                if any(source.glob(pattern)):
+                    return True
+            except (IndexError, ValueError):
                 continue
 
-            for file in files:
-                if utils.is_same_file(file, source) or source in file.parents:
-                    return True
         return False
 
     def ignore(self, file: Path) -> None:

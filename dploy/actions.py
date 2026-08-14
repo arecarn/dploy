@@ -103,7 +103,9 @@ class SymbolicLink(AbstractBaseAction):
         self.dest = dest
 
     def execute(self) -> None:
-        self.dest.symlink_to(self.source_relative)
+        self.dest.symlink_to(
+            self.source_relative, target_is_directory=self.source.is_dir()
+        )
 
     def __repr__(self) -> str:
         return f"dploy {self.subcmd}: link {self.dest} => {self.source_relative}"
