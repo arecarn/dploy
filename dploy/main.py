@@ -56,13 +56,13 @@ class Input:
 
         return is_there_duplicates
 
-    def _is_valid_dest(self, dest: Path) -> bool:
+    def _is_valid_dest(self, dest: Path) -> bool:  # pylint: disable=unused-argument
         """
         Abstract method to check if the dest input to a sub-command is valid
         """
         return True
 
-    def _is_valid_source(self, source: Path) -> bool:
+    def _is_valid_source(self, source: Path) -> bool:  # pylint: disable=unused-argument
         """
         Abstract method to check if the source input to a sub-command is valid
         """
@@ -113,7 +113,9 @@ class AbstractBaseSubCommand:
         need to be added or if some actions need to be removed.
         """
 
-    def _is_valid_input(self, sources: Sequence[Path], dest: Path) -> bool:
+    def _is_valid_input(  # pylint: disable=unused-argument
+        self, sources: Sequence[Path], dest: Path
+    ) -> bool:
         """
         Abstract method to check if the input to a sub-command is valid
         """

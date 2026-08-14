@@ -34,7 +34,8 @@ def create_file(file_name: str | os.PathLike) -> None:
     """
     create an file
     """
-    open(file_name, "w", encoding="utf-8").close()
+    with open(file_name, "w", encoding="utf-8"):
+        pass
 
 
 def create_directory(directory_name: str | os.PathLike) -> None:
