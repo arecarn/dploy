@@ -50,7 +50,7 @@ def is_same_files(files1: Sequence[Path], files2: Sequence[Path]) -> bool:
     """
     if len(files1) != len(files2):
         return False
-    return all(f1.samefile(f2) for f1, f2 in zip(files1, files2))
+    return all(f1.samefile(f2) for f1, f2 in zip(files1, files2, strict=True))
 
 
 def get_absolute_path(file: str | Path) -> Path:

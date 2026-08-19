@@ -8,8 +8,6 @@ import os
 import pathlib
 from typing import TYPE_CHECKING
 
-import pytest
-
 from dploy import utils
 
 if TYPE_CHECKING:
