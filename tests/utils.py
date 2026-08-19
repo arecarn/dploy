@@ -15,6 +15,8 @@ if TYPE_CHECKING:
     from types import TracebackType
     from typing import Any
 
+    from typing_extensions import Self
+
 
 skip_on_windows_permissions = pytest.mark.skipif(
     os.name == "nt",
@@ -65,9 +67,7 @@ class ChangeDirectory:
         self.new_path = os.path.expanduser(str(new_path))
         self.saved_path = os.getcwd()
 
-    # PYI034 wants Self here, which is not available on the minimum
-    # supported Python (3.10)
-    def __enter__(self) -> ChangeDirectory:  # noqa: PYI034
+    def __enter__(self) -> Self:
         os.chdir(self.new_path)
         return self
 

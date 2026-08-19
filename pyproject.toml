@@ -29,6 +29,9 @@ dev = [
     "invoke>=2.0",
     "ruff",
     "ty",
+    # only the tests need Self; the package itself supports Python 3.10, where
+    # typing.Self does not exist
+    "typing-extensions",
 ]
 
 [build-system]
