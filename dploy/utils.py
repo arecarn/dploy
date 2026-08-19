@@ -11,8 +11,8 @@ import shutil
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from pathlib import Path
-    from typing import Sequence
 
 
 def get_directory_contents(directory: Path) -> list[Path]:

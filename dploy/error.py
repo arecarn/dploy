@@ -8,8 +8,8 @@ import sys
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from pathlib import Path
-    from typing import Sequence
 
 ERROR_HEAD = "dploy {subcmd}: can not {subcmd} "
 

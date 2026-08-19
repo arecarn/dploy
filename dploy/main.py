@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING
 from dploy import actions, error, ignore
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from pathlib import Path
-    from typing import Sequence
 
 
 class Input:

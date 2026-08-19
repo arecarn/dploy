@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING
 from dploy import linkcmd, stowcmd
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from pathlib import Path
-    from typing import Sequence
 
 
 def stow(

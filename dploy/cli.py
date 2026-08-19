@@ -12,7 +12,7 @@ from dploy import linkcmd, stowcmd, version
 from dploy.error import DployError
 
 if TYPE_CHECKING:
-    from typing import Sequence
+    from collections.abc import Sequence
 
 
 def add_ignore_argument(parser: argparse.ArgumentParser) -> None:
