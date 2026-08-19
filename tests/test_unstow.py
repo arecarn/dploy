@@ -264,7 +264,9 @@ def test_unstow_folding_with_multiple_sources_with_execute_permission_unset(
         dploy.unstow([source_a], dest)
 
 
-def test_unstow_with_dotfiles(source_with_dotfiles, dest_with_dotfiles):
+def test_unstow_with_dotfiles(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any
+) -> None:
     dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
     dploy.unstow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
 
@@ -273,8 +275,8 @@ def test_unstow_with_dotfiles(source_with_dotfiles, dest_with_dotfiles):
 
 
 def test_unstow_with_dot_in_exist_fold_with_dotfiles(
-    source_with_dotfiles, dest_with_dotfiles
-):
+    source_with_dotfiles: Any, dest_with_dotfiles: Any
+) -> None:
     utils.create_directory(os.path.join(dest_with_dotfiles, "aaa"))
 
     dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
@@ -287,8 +289,8 @@ def test_unstow_with_dot_in_exist_fold_with_dotfiles(
 
 
 def test_unstow_with_dot_in_exist_fold_exist_other_with_dotfiles(
-    source_with_dotfiles, dest_with_dotfiles
-):
+    source_with_dotfiles: Any, dest_with_dotfiles: Any
+) -> None:
     utils.create_directory(os.path.join(dest_with_dotfiles, "aaa"))
     utils.create_file(os.path.join(dest_with_dotfiles, "aaa", ".keep"))
     dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)

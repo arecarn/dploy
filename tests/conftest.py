@@ -190,8 +190,8 @@ def file_dploystowignore(tmpdir: Any) -> str:
     return name
 
 
-@pytest.fixture(scope="function")
-def source_with_dotfiles(tmpdir):
+@pytest.fixture()
+def source_with_dotfiles(tmpdir: Any) -> Iterator[str]:
     """
     a source directory to stow and unstow that contains files and folders named with prefix 'dot-'
     """
@@ -220,8 +220,8 @@ def source_with_dotfiles(tmpdir):
     utils.remove_tree(name)
 
 
-@pytest.fixture(scope="function")
-def dest_with_dotfiles(tmpdir):
+@pytest.fixture()
+def dest_with_dotfiles(tmpdir: Any) -> Iterator[str]:
     """
     a destination directory to stow into or unstow from with dotfiles
     """

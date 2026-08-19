@@ -96,8 +96,8 @@ def test_cli_with_version_option(capsys: Any) -> None:
 
 
 def test_cli_stow_with_dotfiles_option(
-    source_with_dotfiles, dest_with_dotfiles, capsys
-):
+    source_with_dotfiles: Any, dest_with_dotfiles: Any, capsys: Any
+) -> None:
     args = ["stow", "--dotfiles", source_with_dotfiles, dest_with_dotfiles]
     dploy.cli.run(args)
     assert os.readlink(os.path.join(dest_with_dotfiles, "aaa")) == os.path.join(
@@ -114,17 +114,12 @@ def test_cli_stow_with_dotfiles_option(
     s2 = os.path.relpath(
         os.path.join(source_with_dotfiles, "dot-bbb"), dest_with_dotfiles
     )
-    assert (
-        out
-        == "dploy stow: link {dest} => {source}\ndploy stow: link {dest2} => {source2}\n".format(
-            source=s, dest=d, source2=s2, dest2=d2
-        )
-    )
+    assert out == f"dploy stow: link {d} => {s}\ndploy stow: link {d2} => {s2}\n"
 
 
 def test_cli_unstow_with_dotfiles_option(
-    source_with_dotfiles, dest_with_dotfiles, capsys
-):
+    source_with_dotfiles: Any, dest_with_dotfiles: Any, capsys: Any
+) -> None:
     args = ["stow", "--dotfiles", source_with_dotfiles, dest_with_dotfiles]
     dploy.cli.run(args)
     args_unstow = ["unstow", "--dotfiles", source_with_dotfiles, dest_with_dotfiles]
@@ -140,11 +135,9 @@ def test_cli_unstow_with_dotfiles_option(
         os.path.join(source_with_dotfiles, "dot-bbb"), dest_with_dotfiles
     )
     expected_output = (
-        "dploy stow: link {dest} => {source}\n"
-        "dploy stow: link {dest2} => {source2}\n"
-        "dploy unstow: unlink {dest} => {source}\n"
-        "dploy unstow: unlink {dest2} => {source2}\n".format(
-            source=s, dest=d, source2=s2, dest2=d2
-        )
+        f"dploy stow: link {d} => {s}\n"
+        f"dploy stow: link {d2} => {s2}\n"
+        f"dploy unstow: unlink {d} => {s}\n"
+        f"dploy unstow: unlink {d2} => {s2}\n"
     )
     assert out == (expected_output)
