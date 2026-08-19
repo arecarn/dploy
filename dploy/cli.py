@@ -28,6 +28,21 @@ def add_ignore_argument(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def add_dotfiles_argument(parser: argparse.ArgumentParser) -> None:
+    """
+    add the --dotfiles argument to a sub-command parser
+    """
+    parser.add_argument(
+        "--dotfiles",
+        dest="dotfiles",
+        action="store_true",
+        help=(
+            "stow a source named 'dot-something' as a destination named "
+            "'.something'. Must be passed to unstow as well"
+        ),
+    )
+
+
 def create_parser() -> argparse.ArgumentParser:
     """
     create the CLI argument parser
@@ -54,12 +69,7 @@ def create_parser() -> argparse.ArgumentParser:
     stow_parser = sub_parsers.add_parser("stow")
     stow_parser.add_argument("source", nargs="+", help="source directory to stow")
     stow_parser.add_argument("dest", help="destination path to stow into")
-    stow_parser.add_argument(
-        "--dotfiles",
-        dest="dotfiles",
-        action="store_true",
-        help="Treating a source file or folder named 'dot-prefix-something' is equivalent to a destination file or folder named '.prefix-something'",
-    )
+    add_dotfiles_argument(stow_parser)
     add_ignore_argument(stow_parser)
 
     unstow_parser = sub_parsers.add_parser("unstow")
@@ -67,12 +77,7 @@ def create_parser() -> argparse.ArgumentParser:
         "source", nargs="+", help="source directory to unstow from"
     )
     unstow_parser.add_argument("dest", help="destination path to unstow")
-    unstow_parser.add_argument(
-        "--dotfiles",
-        dest="dotfiles",
-        action="store_true",
-        help="Treating a source file or folder named 'dot-prefix-something' is equivalent to a destination file or folder named '.prefix-something'",
-    )
+    add_dotfiles_argument(unstow_parser)
     add_ignore_argument(unstow_parser)
 
     clean_parser = sub_parsers.add_parser("clean")
@@ -94,9 +99,13 @@ def run(arguments: Sequence[str] | None = None) -> None:
     interpret the parser arguments and execute the corresponding commands
     """
 
-    subcmd_map = {
+    # --dotfiles is a stow-family concept, so those sub-commands are dispatched
+    # separately rather than giving clean and link a parameter they ignore
+    stow_subcmd_map: dict[str, type[stowcmd.Stow | stowcmd.UnStow]] = {
         "stow": stowcmd.Stow,
         "unstow": stowcmd.UnStow,
+    }
+    other_subcmd_map: dict[str, type[stowcmd.Clean | linkcmd.Link]] = {
         "clean": stowcmd.Clean,
         "link": linkcmd.Link,
     }
@@ -109,15 +118,13 @@ def run(arguments: Sequence[str] | None = None) -> None:
         else:
             args = parser.parse_args(arguments)
 
-        if args.subcmd in subcmd_map:
-            subcmd = subcmd_map[args.subcmd]
-        else:
+        if args.subcmd not in stow_subcmd_map and args.subcmd not in other_subcmd_map:
             parser.print_help()
             sys.exit(0)
 
         try:
-            if args.subcmd in ["stow", "unstow"]:
-                subcmd(
+            if args.subcmd in stow_subcmd_map:
+                stow_subcmd_map[args.subcmd](
                     args.source,
                     args.dest,
                     is_silent=args.is_silent,
@@ -126,7 +133,7 @@ def run(arguments: Sequence[str] | None = None) -> None:
                     dotfiles=args.dotfiles,
                 )
             else:
-                subcmd(
+                other_subcmd_map[args.subcmd](
                     args.source,
                     args.dest,
                     is_silent=args.is_silent,
