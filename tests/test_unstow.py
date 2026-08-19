@@ -99,6 +99,7 @@ def test_unstow_with_file_as_source_and_dest(file_a: Any, file_b: Any) -> None:
         dploy.unstow([file_a], file_b)
 
 
+@utils.skip_on_windows_permissions
 def test_unstow_with_read_only_dest(source_a: Any, dest: Any) -> None:
     dploy.stow([source_a], dest)
     utils.remove_write_permission(dest)
@@ -109,12 +110,14 @@ def test_unstow_with_read_only_dest(source_a: Any, dest: Any) -> None:
         dploy.unstow([source_a], dest)
 
 
+@utils.skip_on_windows_permissions
 def test_unstow_with_read_only_dest_file(source_a: Any, dest: Any) -> None:
     dploy.stow([source_a], dest)
     utils.remove_write_permission(os.path.join(dest, "aaa"))
     dploy.unstow([source_a], dest)
 
 
+@utils.skip_on_windows_permissions
 def test_unstow_with_write_only_source(source_a: Any, dest: Any) -> None:
     dploy.stow([source_a], dest)
     utils.remove_read_permission(source_a)
@@ -129,6 +132,7 @@ def test_unstow_with_write_only_source(source_a: Any, dest: Any) -> None:
     utils.add_read_permission(source_a)
 
 
+@utils.skip_on_windows_permissions
 def test_unstow_with_dest_with_no_executue_permissions(
     source_a: Any, dest: Any
 ) -> None:
@@ -141,6 +145,7 @@ def test_unstow_with_dest_with_no_executue_permissions(
         dploy.unstow([source_a], dest)
 
 
+@utils.skip_on_windows_permissions
 def test_unstow_with_dest_dir_with_no_executue_permissions(
     source_a: Any, source_b: Any, dest: Any
 ) -> None:
@@ -247,6 +252,7 @@ def test_unstow_folding_with_existing_file_in_dest(
     ),
     strict=True,
 )
+@utils.skip_on_windows_permissions
 def test_unstow_folding_with_multiple_sources_with_execute_permission_unset(
     source_a: Any, source_b: Any, dest: Any
 ) -> None:

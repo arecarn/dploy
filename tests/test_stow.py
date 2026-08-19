@@ -131,6 +131,7 @@ def test_stow_with_same_simple_directory_used_as_source_and_dest(
         dploy.stow([source_only_files], source_only_files)
 
 
+@utils.skip_on_windows_permissions
 def test_stow_with_read_only_dest(source_a: Any, dest: Any) -> None:
     utils.remove_write_permission(dest)
     message = str(error.InsufficientPermissionsToSubcmdTo(subcmd=SUBCMD, file=dest))
@@ -140,6 +141,7 @@ def test_stow_with_read_only_dest(source_a: Any, dest: Any) -> None:
         dploy.stow([source_a], dest)
 
 
+@utils.skip_on_windows_permissions
 def test_stow_with_write_only_source(source_a: Any, source_c: Any, dest: Any) -> None:
     utils.remove_read_permission(source_a)
     message = str(
@@ -151,6 +153,7 @@ def test_stow_with_write_only_source(source_a: Any, source_c: Any, dest: Any) ->
         dploy.stow([source_a, source_c], dest)
 
 
+@utils.skip_on_windows_permissions
 def test_stow_with_source_with_no_executue_permissions(
     source_a: Any, source_c: Any, dest: Any
 ) -> None:
@@ -164,6 +167,7 @@ def test_stow_with_source_with_no_executue_permissions(
         dploy.stow([source_a, source_c], dest)
 
 
+@utils.skip_on_windows_permissions
 def test_stow_with_source_dir_with_no_executue_permissions(
     source_a: Any, source_c: Any, dest: Any
 ) -> None:
@@ -247,6 +251,7 @@ def test_stow_unfolding_with_mutliple_sources(
     ),
     strict=True,
 )
+@utils.skip_on_windows_permissions
 def test_stow_unfolding_with_first_sources_execute_permission_removed(
     source_a: Any, source_b: Any, dest: Any
 ) -> None:
@@ -258,6 +263,7 @@ def test_stow_unfolding_with_first_sources_execute_permission_removed(
         dploy.stow([source_b], dest)
 
 
+@utils.skip_on_windows_permissions
 def test_stow_unfolding_with_write_only_source_file(
     source_a: Any, source_b: Any, dest: Any
 ) -> None:

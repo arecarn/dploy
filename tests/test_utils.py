@@ -8,6 +8,8 @@ import os
 import pathlib
 from typing import TYPE_CHECKING
 
+import pytest
+
 from dploy import utils
 
 if TYPE_CHECKING:
@@ -46,6 +48,10 @@ def test_readlink_with_relative_target(dest: Any, source_a: Any) -> None:
     assert utils.readlink(dest_path, absolute_target=True).exists()
 
 
+@pytest.mark.skipif(
+    os.name == "nt",
+    reason="#27: os.readlink returns a \\\\?\\ extended-length path on Windows",
+)
 def test_readlink_with_absolute_target(dest: Any, source_a: Any) -> None:
     target = os.path.join(source_a, "aaa")
     dest_path = os.path.join(dest, "bbb")

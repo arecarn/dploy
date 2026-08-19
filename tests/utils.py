@@ -9,9 +9,20 @@ import shutil
 import stat
 from typing import TYPE_CHECKING
 
+import pytest
+
 if TYPE_CHECKING:
     from types import TracebackType
     from typing import Any
+
+
+skip_on_windows_permissions = pytest.mark.skipif(
+    os.name == "nt",
+    reason=(
+        "#28: os.access and os.chmod do not carry their POSIX meaning on "
+        "Windows, so the access failure these tests expect never happens"
+    ),
+)
 
 
 def remove_tree(tree: str | os.PathLike) -> None:
