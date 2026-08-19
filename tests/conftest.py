@@ -11,7 +11,8 @@ import pytest
 from tests import utils
 
 if TYPE_CHECKING:
-    from typing import Any, Iterator
+    from collections.abc import Iterator
+    from typing import Any
 
 
 @pytest.fixture()
