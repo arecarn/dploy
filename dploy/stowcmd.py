@@ -15,6 +15,29 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
+DOTFILE_PREFIX = "dot-"
+
+
+def translate_dotfile_name(name: str) -> str:
+    """
+    translate a 'dot-' prefixed source name into its dot-file destination
+    name, e.g. 'dot-bashrc' becomes '.bashrc'
+
+    Names that would translate into a path traversal are left alone: 'dot-'
+    would become '.' (the destination itself) and 'dot-.' would become '..'
+    (the destination's parent), either of which would place the link outside
+    the directory being stowed into.
+    """
+    if not name.startswith(DOTFILE_PREFIX):
+        return name
+
+    remainder = name[len(DOTFILE_PREFIX) :]
+    if remainder in ("", "."):
+        return name
+
+    return "." + remainder
+
+
 class AbstractBaseStow(main.AbstractBaseSubCommand):
     """
     Abstract Base class that contains the shared logic for all of the stow
@@ -32,9 +55,8 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
         dotfiles: bool = False,
     ) -> None:
         self.is_unfolding = False
-        super().__init__(
-            subcmd, source, dest, is_silent, is_dry_run, ignore_patterns, dotfiles
-        )
+        self.dotfiles = dotfiles
+        super().__init__(subcmd, source, dest, is_silent, is_dry_run, ignore_patterns)
 
     def _is_valid_input(self, sources: Sequence[Path], dest: Path) -> bool:
         """
@@ -116,8 +138,8 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
                 continue
 
             dest_name = subsources.name
-            if self.dotfiles and dest_name.startswith("dot-"):
-                dest_name = dest_name.replace("dot-", ".", 1)
+            if self.dotfiles:
+                dest_name = translate_dotfile_name(dest_name)
             dest_path = dest / pathlib.Path(dest_name)
 
             does_dest_path_exist = False
@@ -414,15 +436,7 @@ class Clean(main.AbstractBaseSubCommand):
         self.source = [pathlib.Path(s) for s in source]
         self.dest = pathlib.Path(dest)
         self.ignore_patterns = ignore_patterns
-        super().__init__(
-            "clean",
-            source,
-            dest,
-            is_silent,
-            is_dry_run,
-            ignore_patterns,
-            dotfiles=False,
-        )
+        super().__init__("clean", source, dest, is_silent, is_dry_run, ignore_patterns)
 
     def _is_valid_input(self, sources: Sequence[Path], dest: Path) -> bool:
         """

@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 import dploy
-from dploy import error
+from dploy import error, stowcmd
 from tests import utils
 
 if TYPE_CHECKING:
@@ -274,7 +274,7 @@ def test_stow_unfolding_with_write_only_source_file(
         dploy.stow([source_a, source_b], dest)
 
 
-def test_stow_with_dotfiles(source_with_dotfiles, dest_with_dotfiles):
+def test_stow_with_dotfiles(source_with_dotfiles: Any, dest_with_dotfiles: Any) -> None:
     dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
 
     assert os.readlink(os.path.join(dest_with_dotfiles, ".bbb")) == os.path.join(
@@ -288,8 +288,8 @@ def test_stow_with_dotfiles(source_with_dotfiles, dest_with_dotfiles):
 
 
 def test_stow_with_dot_in_exist_fold_with_dotfiles(
-    source_with_dotfiles, dest_with_dotfiles
-):
+    source_with_dotfiles: Any, dest_with_dotfiles: Any
+) -> None:
     utils.create_directory(os.path.join(dest_with_dotfiles, "aaa"))
     dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
 
@@ -300,8 +300,8 @@ def test_stow_with_dot_in_exist_fold_with_dotfiles(
 
 
 def test_stow_with_dot_in_exist_fold_exist_other_with_dotfiles(
-    source_with_dotfiles, dest_with_dotfiles
-):
+    source_with_dotfiles: Any, dest_with_dotfiles: Any
+) -> None:
     utils.create_directory(os.path.join(dest_with_dotfiles, "aaa"))
     utils.create_file(os.path.join(dest_with_dotfiles, "aaa", ".keep"))
     dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
@@ -318,3 +318,40 @@ def test_stow_with_dot_in_exist_fold_exist_other_with_dotfiles(
         os.path.join(dest_with_dotfiles, "aaa", ".ccc", "dot-aaa")
     )
     assert not os.path.islink(os.path.join(dest_with_dotfiles, "aaa", ".ccc", "bbb"))
+
+
+@pytest.mark.parametrize(
+    ("source_name", "expected"),
+    [
+        ("dot-bashrc", ".bashrc"),
+        ("dot-config", ".config"),
+        ("dot-..", "..."),
+        ("bashrc", "bashrc"),
+        (".bashrc", ".bashrc"),
+        ("adot-bashrc", "adot-bashrc"),
+        # would translate to the destination itself
+        ("dot-", "dot-"),
+        # would translate to the destination's parent
+        ("dot-.", "dot-."),
+    ],
+)
+def test_translate_dotfile_name(source_name: str, expected: str) -> None:
+    assert stowcmd.translate_dotfile_name(source_name) == expected
+
+
+def test_stow_with_dotfiles_does_not_escape_dest(tmpdir: Any) -> None:
+    """
+    a source directory named 'dot-.' would translate to '..', which would
+    place the link outside the destination. it is left untranslated instead.
+    """
+    source = tmpdir.mkdir("source")
+    package = source.mkdir("dot-.")
+    utils.create_file(os.path.join(str(package), "payload"))
+    dest = tmpdir.mkdir("dest")
+
+    dploy.stow([str(source)], str(dest), dotfiles=True)
+
+    assert sorted(os.listdir(str(tmpdir))) == ["dest", "source"]
+    assert os.readlink(os.path.join(str(dest), "dot-.")) == os.path.join(
+        "..", "source", "dot-."
+    )
