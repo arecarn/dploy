@@ -118,7 +118,10 @@ def readlink(path: Path, absolute_target: bool = False) -> Path:
     relative.
 
     Note: we can't use pathlib.Path.resolve because it doesn't work for broken
-    links (it resolves the target, which may not exist)
+    links (it resolves the target, which may not exist). os.path.normpath is
+    used instead to collapse the '..' segments a relative link produces when
+    joined to its own directory: it is purely lexical, so unlike resolve() it
+    works on a link whose target is gone.
 
     """
     link_target = os.readlink(str(path))
@@ -126,5 +129,5 @@ def readlink(path: Path, absolute_target: bool = False) -> Path:
     if absolute_target:
         if not os.path.isabs(link_target):
             link_target = os.path.join(path_dir, link_target)
-        return pathlib.Path(link_target)
+        return pathlib.Path(os.path.normpath(link_target))
     return pathlib.Path(link_target)
