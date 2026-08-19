@@ -2,8 +2,12 @@
 Tests for the stow sub command
 """
 
+from __future__ import annotations
+
 import os
 import re
+import sys
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -11,22 +15,27 @@ import dploy
 from dploy import error
 from tests import utils
 
+if TYPE_CHECKING:
+    from typing import Any
+
 SUBCMD = "unstow"
 
 
-def test_unstow_with_basic_senario(source_a, dest) -> None:
+def test_unstow_with_basic_senario(source_a: Any, dest: Any) -> None:
     dploy.stow([source_a], dest)
     dploy.unstow([source_a], dest)
     assert not os.path.exists(os.path.join(dest, "aaa"))
 
 
-def test_unstow_dwith_basic_senario_doesnt_delete_dest_directory(source_a, dest) -> None:
+def test_unstow_dwith_basic_senario_doesnt_delete_dest_directory(
+    source_a: Any, dest: Any
+) -> None:
     dploy.stow([source_a], dest)
     dploy.unstow([source_a], dest)
     assert os.path.exists(dest)
 
 
-def test_unstow_with_a_broken_link_dest(source_a, dest) -> None:
+def test_unstow_with_a_broken_link_dest(source_a: Any, dest: Any) -> None:
     conflicting_link = os.path.join(dest, "aaa")
     source_file = os.path.join(source_a, "aaa")
     os.symlink("non_existant_source", os.path.join(dest, "aaa"))
@@ -41,7 +50,7 @@ def test_unstow_with_a_broken_link_dest(source_a, dest) -> None:
         dploy.unstow([source_a], dest)
 
 
-def test_unstow_with_broken_link_in_dest(source_a, dest) -> None:
+def test_unstow_with_broken_link_in_dest(source_a: Any, dest: Any) -> None:
     os.mkdir(os.path.join(dest, "aaa"))
     dploy.stow([source_a], dest)
     os.symlink(
@@ -51,46 +60,46 @@ def test_unstow_with_broken_link_in_dest(source_a, dest) -> None:
     dploy.unstow([source_a], dest)
 
 
-def test_unstow_with_non_existant_source(dest) -> None:
+def test_unstow_with_non_existant_source(dest: Any) -> None:
     source = "source"
     message = str(error.NoSuchDirectory(subcmd=SUBCMD, file=source))
     with pytest.raises(error.NoSuchDirectory, match=re.escape(message)):
         dploy.unstow([source], dest)
 
 
-def test_unstow_with_duplicate_source(source_a, dest) -> None:
+def test_unstow_with_duplicate_source(source_a: Any, dest: Any) -> None:
     dploy.stow([source_a], dest)
     message = str(error.DuplicateSource(subcmd=SUBCMD, file=source_a))
     with pytest.raises(error.DuplicateSource, match=re.escape(message)):
         dploy.unstow([source_a, source_a], dest)
 
 
-def test_unstow_with_non_existant_dest(source_a) -> None:
+def test_unstow_with_non_existant_dest(source_a: Any) -> None:
     dest = "dest"
     message = str(error.NoSuchDirectoryToSubcmdInto(subcmd=SUBCMD, file=dest))
     with pytest.raises(error.NoSuchDirectoryToSubcmdInto, match=re.escape(message)):
         dploy.unstow([source_a], dest)
 
 
-def test_unstow_with_file_as_source(file_a, dest) -> None:
+def test_unstow_with_file_as_source(file_a: Any, dest: Any) -> None:
     message = str(error.NoSuchDirectory(subcmd=SUBCMD, file=file_a))
     with pytest.raises(error.NoSuchDirectory, match=re.escape(message)):
         dploy.unstow([file_a], dest)
 
 
-def test_unstow_with_file_as_dest(source_a, file_a) -> None:
+def test_unstow_with_file_as_dest(source_a: Any, file_a: Any) -> None:
     message = str(error.NoSuchDirectoryToSubcmdInto(subcmd=SUBCMD, file=file_a))
     with pytest.raises(error.NoSuchDirectoryToSubcmdInto, match=re.escape(message)):
         dploy.unstow([source_a], file_a)
 
 
-def test_unstow_with_file_as_source_and_dest(file_a, file_b) -> None:
+def test_unstow_with_file_as_source_and_dest(file_a: Any, file_b: Any) -> None:
     message = str(error.NoSuchDirectoryToSubcmdInto(subcmd=SUBCMD, file=file_b))
     with pytest.raises(error.NoSuchDirectoryToSubcmdInto, match=re.escape(message)):
         dploy.unstow([file_a], file_b)
 
 
-def test_unstow_with_read_only_dest(source_a, dest) -> None:
+def test_unstow_with_read_only_dest(source_a: Any, dest: Any) -> None:
     dploy.stow([source_a], dest)
     utils.remove_write_permission(dest)
     message = str(error.InsufficientPermissionsToSubcmdTo(subcmd=SUBCMD, file=dest))
@@ -100,13 +109,13 @@ def test_unstow_with_read_only_dest(source_a, dest) -> None:
         dploy.unstow([source_a], dest)
 
 
-def test_unstow_with_read_only_dest_file(source_a, dest) -> None:
+def test_unstow_with_read_only_dest_file(source_a: Any, dest: Any) -> None:
     dploy.stow([source_a], dest)
     utils.remove_write_permission(os.path.join(dest, "aaa"))
     dploy.unstow([source_a], dest)
 
 
-def test_unstow_with_write_only_source(source_a, dest) -> None:
+def test_unstow_with_write_only_source(source_a: Any, dest: Any) -> None:
     dploy.stow([source_a], dest)
     utils.remove_read_permission(source_a)
     message = str(
@@ -120,7 +129,9 @@ def test_unstow_with_write_only_source(source_a, dest) -> None:
     utils.add_read_permission(source_a)
 
 
-def test_unstow_with_dest_with_no_executue_permissions(source_a, dest) -> None:
+def test_unstow_with_dest_with_no_executue_permissions(
+    source_a: Any, dest: Any
+) -> None:
     dploy.stow([source_a], dest)
     utils.remove_execute_permission(dest)
     message = str(error.InsufficientPermissionsToSubcmdTo(subcmd=SUBCMD, file=dest))
@@ -130,7 +141,9 @@ def test_unstow_with_dest_with_no_executue_permissions(source_a, dest) -> None:
         dploy.unstow([source_a], dest)
 
 
-def test_unstow_with_dest_dir_with_no_executue_permissions(source_a, source_b, dest) -> None:
+def test_unstow_with_dest_dir_with_no_executue_permissions(
+    source_a: Any, source_b: Any, dest: Any
+) -> None:
     dest_dir = os.path.join(dest, "aaa")
     dploy.stow([source_a, source_b], dest)
     utils.remove_execute_permission(os.path.join(dest, "aaa"))
@@ -141,44 +154,48 @@ def test_unstow_with_dest_dir_with_no_executue_permissions(source_a, source_b, d
         dploy.unstow([source_a, source_b], dest)
 
 
-def test_unstow_with_write_only_source_file(source_a, dest) -> None:
+def test_unstow_with_write_only_source_file(source_a: Any, dest: Any) -> None:
     dploy.stow([source_a], dest)
     utils.remove_read_permission(os.path.join(source_a, "aaa", "aaa"))
     dploy.unstow([source_a], dest)
 
 
-def test_unstow_with_write_only_dest_file(source_a, dest) -> None:
+def test_unstow_with_write_only_dest_file(source_a: Any, dest: Any) -> None:
     dploy.stow([source_a], dest)
     utils.remove_read_permission(os.path.join(dest, "aaa"))
     dploy.unstow([source_a], dest)
 
 
-def test_unstow_with_same_directory_used_as_source_and_dest(source_a) -> None:
+def test_unstow_with_same_directory_used_as_source_and_dest(source_a: Any) -> None:
     message = str(error.SourceIsSameAsDest(subcmd=SUBCMD, file=source_a))
     with pytest.raises(error.SourceIsSameAsDest, match=re.escape(message)):
         dploy.unstow([source_a], source_a)
 
 
-def test_unstow_with_same_simple_directory_used_as_source_and_dest(source_only_files) -> None:
+def test_unstow_with_same_simple_directory_used_as_source_and_dest(
+    source_only_files: Any,
+) -> None:
     message = str(error.SourceIsSameAsDest(subcmd=SUBCMD, file=source_only_files))
     with pytest.raises(error.SourceIsSameAsDest, match=re.escape(message)):
         dploy.unstow([source_only_files], source_only_files)
 
 
-def test_unstow_folding_basic(source_a, source_b, dest) -> None:
+def test_unstow_folding_basic(source_a: Any, source_b: Any, dest: Any) -> None:
     dploy.stow([source_a, source_b], dest)
     dploy.unstow([source_b], dest)
     assert os.path.islink(os.path.join(dest, "aaa"))
 
 
-def test_unstow_folding_with_multiple_sources(source_a, source_b, source_d, dest) -> None:
+def test_unstow_folding_with_multiple_sources(
+    source_a: Any, source_b: Any, source_d: Any, dest: Any
+) -> None:
     dploy.stow([source_a, source_b, source_d], dest)
     dploy.unstow([source_b, source_d], dest)
     assert os.path.islink(os.path.join(dest, "aaa"))
 
 
 def test_unstow_folding_with_stray_symlink_in_unfolded_dest_dir(
-    source_a, source_b, source_d, dest
+    source_a: Any, source_b: Any, source_d: Any, dest: Any
 ) -> None:
     """
     Given a dest directory with stowed packages that share a unfolded directory,
@@ -196,20 +213,24 @@ def test_unstow_folding_with_stray_symlink_in_unfolded_dest_dir(
 
 
 def test_unstow_folding_with_multiple_stowed_sources(
-    source_a, source_b, source_d, dest
+    source_a: Any, source_b: Any, source_d: Any, dest: Any
 ) -> None:
     dploy.stow([source_a, source_b, source_d], dest)
     dploy.unstow([source_b], dest)
     assert not os.path.islink(os.path.join(dest, "aaa"))
 
 
-def test_unstow_folding_with_multiple_sources_all_unstowed(source_a, source_b, dest) -> None:
+def test_unstow_folding_with_multiple_sources_all_unstowed(
+    source_a: Any, source_b: Any, dest: Any
+) -> None:
     dploy.stow([source_a, source_b], dest, is_silent=False)
     dploy.unstow([source_a, source_b], dest, is_silent=False)
     assert not os.path.exists(os.path.join(dest, "aaa"))
 
 
-def test_unstow_folding_with_existing_file_in_dest(source_a, source_b, dest) -> None:
+def test_unstow_folding_with_existing_file_in_dest(
+    source_a: Any, source_b: Any, dest: Any
+) -> None:
     os.mkdir(os.path.join(dest, "aaa"))
     a_file = os.path.join(dest, "aaa", "a_file")
     utils.create_file(a_file)
@@ -218,8 +239,16 @@ def test_unstow_folding_with_existing_file_in_dest(source_a, source_b, dest) -> 
     assert os.path.exists(a_file)
 
 
+@pytest.mark.xfail(
+    sys.version_info >= (3, 14),
+    reason=(
+        "#31: Path.exists() no longer raises PermissionError on 3.14, so the "
+        "permission failure is misreported as a conflict"
+    ),
+    strict=True,
+)
 def test_unstow_folding_with_multiple_sources_with_execute_permission_unset(
-    source_a, source_b, dest
+    source_a: Any, source_b: Any, dest: Any
 ) -> None:
     dploy.stow([source_a, source_b], dest)
     utils.remove_execute_permission(source_b)
