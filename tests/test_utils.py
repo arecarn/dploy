@@ -16,6 +16,13 @@ if TYPE_CHECKING:
     from typing import Any
 
 
+@pytest.mark.skipif(
+    os.name == "nt",
+    reason=(
+        "#27: a drive-relative target like /source/bbb comes back from "
+        "os.readlink with the current drive prepended on Windows"
+    ),
+)
 def test_readlink_with_broken_absolute_target(dest: Any) -> None:
     target = os.path.join("/", "source_only_files", "bbb")
     dest_path = os.path.join(dest, "bbb")
