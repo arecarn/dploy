@@ -263,7 +263,7 @@ class UnStow(AbstractBaseStow):
         find candidates for folding i.e. when a directory contains symlinks to
         files that all share the same parent directory
         """
-        for parent in self.actions.get_unlink_target_parents():
+        for parent in self.actions.get_unlink_path_parents():
             items = utils.get_directory_contents(parent)
             other_links_parents: list[Path] = []
             other_links: list[Path] = []
@@ -271,7 +271,7 @@ class UnStow(AbstractBaseStow):
             is_normal_files_detected = False
 
             for item in items:
-                if item not in self.actions.get_unlink_targets():
+                if item not in self.actions.get_unlink_paths():
                     does_item_exist = False
                     try:
                         does_item_exist = item.exists()

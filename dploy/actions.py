@@ -46,22 +46,22 @@ class Actions:
         """
         return [a for a in self.actions if isinstance(a, UnLink)]
 
-    def get_unlink_target_parents(self) -> list[Path]:
+    def get_unlink_path_parents(self) -> list[Path]:
         """
         Get list of the parents for the current Unlink() actions from
         self.actions
         """
         unlink_actions = self.get_unlink_actions()
         # sort for deterministic output
-        return sorted({a.target.parent for a in unlink_actions})
+        return sorted({a.path.parent for a in unlink_actions})
 
-    def get_unlink_targets(self) -> list[Path]:
+    def get_unlink_paths(self) -> list[Path]:
         """
-        Get list of the targets for the current Unlink() actions from
+        Get list of the paths for the current Unlink() actions from
         self.actions
         """
         unlink_actions = self.get_unlink_actions()
-        return [a.target for a in unlink_actions]
+        return [a.path for a in unlink_actions]
 
     def get_duplicates(self) -> list[list[int]]:
         """
@@ -154,20 +154,20 @@ class UnLink(AbstractBaseAction):
     Action to unlink a symbolic link
     """
 
-    def __init__(self, subcmd: str, target: Path) -> None:
+    def __init__(self, subcmd: str, path: Path) -> None:
         super().__init__()
-        self.target = target
+        self.path = path
         self.subcmd = subcmd
 
     def execute(self) -> None:
-        if not self.target.is_symlink():
+        if not self.path.is_symlink():
             raise RuntimeError(
-                f"dploy detected and aborted an attempt to unlink a non-symlink {self.target} this is a bug and should be reported"
+                f"dploy detected and aborted an attempt to unlink a non-symlink {self.path} this is a bug and should be reported"
             )
-        self.target.unlink()
+        self.path.unlink()
 
     def __repr__(self) -> str:
-        return f"dploy {self.subcmd}: unlink {self.target} => {utils.readlink(self.target)}"
+        return f"dploy {self.subcmd}: unlink {self.path} => {utils.readlink(self.path)}"
 
 
 class MakeDirectory(AbstractBaseAction):
@@ -175,16 +175,16 @@ class MakeDirectory(AbstractBaseAction):
     Action to create a directory
     """
 
-    def __init__(self, subcmd: str, target: Path) -> None:
+    def __init__(self, subcmd: str, path: Path) -> None:
         super().__init__()
-        self.target = target
+        self.path = path
         self.subcmd = subcmd
 
     def execute(self) -> None:
-        self.target.mkdir()
+        self.path.mkdir()
 
     def __repr__(self) -> str:
-        return f"dploy {self.subcmd}: make directory {self.target}"
+        return f"dploy {self.subcmd}: make directory {self.path}"
 
 
 class RemoveDirectory(AbstractBaseAction):
@@ -192,13 +192,13 @@ class RemoveDirectory(AbstractBaseAction):
     Action to remove a directory
     """
 
-    def __init__(self, subcmd: str, target: Path) -> None:
+    def __init__(self, subcmd: str, path: Path) -> None:
         super().__init__()
-        self.target = target
+        self.path = path
         self.subcmd = subcmd
 
     def execute(self) -> None:
-        self.target.rmdir()
+        self.path.rmdir()
 
     def __repr__(self) -> str:
-        return f"dploy {self.subcmd}: remove directory {self.target}"
+        return f"dploy {self.subcmd}: remove directory {self.path}"
