@@ -27,7 +27,7 @@ class Ignore:
         file = source.parent / pathlib.Path(".dploystowignore")
 
         self.patterns = [str(file.name)]  # ignore the ignore file
-        self.patterns.extend(input_patterns)
+        self.patterns.extend(pattern for pattern in input_patterns if pattern)
         self._read_ignore_file_patterns(file)
 
     def _read_ignore_file_patterns(self, file: Path) -> None:
@@ -36,7 +36,7 @@ class Ignore:
         """
         try:
             with open(str(file), encoding="utf-8") as afile:
-                file_patterns = afile.read().splitlines()
+                file_patterns = [line for line in afile.read().splitlines() if line]
                 self.patterns.extend(file_patterns)
         except FileNotFoundError:
             pass
