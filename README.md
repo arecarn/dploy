@@ -61,3 +61,9 @@ Below are just a few few major points of comparison between GNU stow and Dploy.
 * Unlike Stow, Dploy does not have any concept of ownership, but will only
   operate on symbolic links and the creation or removal of directories for these
   symbolic links.
+
+* Unlike Stow, Dploy's `unstow` removes a destination directory that becomes
+  empty as a result of removing its symbolic links, even if that directory
+  existed before `stow` created any links inside it. Dploy keeps no state
+  across invocations, so it cannot distinguish a directory it created from
+  one that already existed.
