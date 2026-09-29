@@ -10,6 +10,11 @@ symlinked file trees.
 Issues live as GitHub issues in `arecarn/dploy`, managed with the `gh` CLI. See
 `docs/agents/issue-tracker.md`.
 
+### Triage labels
+
+Default canonical role names (`needs-triage`, `needs-info`, `ready-for-agent`,
+`ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
 ### Domain docs
 
 Single-context: `CONTEXT.md` and `docs/adr/` at the repo root (created lazily,
