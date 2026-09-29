@@ -36,9 +36,12 @@ def test_readlink_with_broken_relative_target(dest: Any) -> None:
     dest_path = os.path.join(dest, "bbb")
     os.symlink(target, dest_path)
     assert utils.readlink(dest_path) == pathlib.Path(target)
+    # the absolute form is normalized: no '..' segments survive, so the result
+    # can be compared against other absolute paths. Normalization is lexical,
+    # so it works even though this link's target does not exist.
     assert utils.readlink(dest_path, absolute_target=True) == pathlib.Path(
-        dest
-    ) / pathlib.Path(target)
+        os.path.normpath(os.path.join(dest, target))
+    )
 
 
 def test_readlink_with_relative_target(dest: Any, source_a: Any) -> None:
@@ -50,8 +53,8 @@ def test_readlink_with_relative_target(dest: Any, source_a: Any) -> None:
     os.symlink(target, dest_path)
     assert utils.readlink(dest_path) == pathlib.Path(target)
     assert utils.readlink(dest_path, absolute_target=True) == pathlib.Path(
-        dest
-    ) / pathlib.Path(target)
+        os.path.normpath(os.path.join(dest, target))
+    )
     assert utils.readlink(dest_path, absolute_target=True).exists()
 
 

@@ -428,18 +428,18 @@ class Clean(main.AbstractBaseSubCommand):
         return contents
 
     def _collect_clean_actions(
-        self, source: Sequence[Path], source_names: set[str], dest: Path
+        self, source: Sequence[Path], package_paths: set[str], dest: Path
     ) -> None:
-        subdests = utils.get_directory_contents(dest)
+        subdests = self.get_directory_contents(dest)
         for subdest in subdests:
             if subdest.is_symlink():
                 link_target = utils.readlink(subdest, absolute_target=True)
-                if not link_target.exists() and not source_names.isdisjoint(
+                if not link_target.exists() and not package_paths.isdisjoint(
                     set(str(p) for p in link_target.parents)
                 ):
                     self.actions.add(actions.UnLink(self.subcmd, subdest))
             elif subdest.is_dir():
-                self._collect_clean_actions(source, source_names, subdest)
+                self._collect_clean_actions(source, package_paths, subdest)
 
     def _check_for_other_actions(self) -> None:
         """
@@ -460,8 +460,8 @@ class Clean(main.AbstractBaseSubCommand):
             ):
                 return
 
-        # NOTE: an option to make clean more aggressive is to change f.name to
-        # f.parent this could a be a good --option
-        files_names = [str(utils.get_absolute_path(f.name)) for f in valid_files]
-        files_names_set = set(files_names)
-        self._collect_clean_actions(valid_files, files_names_set, self.dest)
+        # NOTE: an option to make clean more aggressive is to match against a
+        # package's parent rather than the package itself, this could be a good
+        # --option
+        package_paths = {str(utils.get_absolute_path(f)) for f in valid_files}
+        self._collect_clean_actions(valid_files, package_paths, self.dest)
