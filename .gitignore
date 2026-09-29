@@ -11,3 +11,6 @@ build/
 # pytest-cov files
 .coverage
 .pytest_cache/
+
+# git worktrees
+.worktree/
