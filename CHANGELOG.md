@@ -15,6 +15,11 @@ organized by order of importance.
 - Switch CI from Travis CI and AppVeyor to GitHub Actions.
 - Move Pylint configuration to pyproject.toml and remove in-code suppressions.
 
+### Fixed
+
+- Blank lines in `.dploystowignore`, or an empty `--ignore` pattern, no
+  longer crash stow/unstow/clean.
+
 ### Removed
 
 ## [0.1.3] - 2026-02-13
