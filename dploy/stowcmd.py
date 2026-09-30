@@ -176,12 +176,12 @@ class Stow(AbstractBaseStow):
 
             if isinstance(first_action, actions.SymbolicLink):
                 if first_action.source.is_dir():
-                    self._unfold(first_action.source, first_action.dest)
+                    self._unfold(first_action.source, first_action.path)
 
                     for action in remaining_actions:
                         if isinstance(action, actions.SymbolicLink):
                             self.is_unfolding = True
-                            self._collect_actions(action.source, action.dest)
+                            self._collect_actions(action.source, action.path)
                             self.is_unfolding = False
                 else:
                     duplicate_action_sources = []
