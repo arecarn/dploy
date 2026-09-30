@@ -52,27 +52,27 @@ def create_parser() -> argparse.ArgumentParser:
     sub_parsers = parser.add_subparsers(dest="subcmd")
 
     stow_parser = sub_parsers.add_parser("stow")
-    stow_parser.add_argument("source", nargs="+", help="source directory to stow")
-    stow_parser.add_argument("dest", help="destination path to stow into")
+    stow_parser.add_argument("package", nargs="+", help="package directory to stow")
+    stow_parser.add_argument("destination", help="destination path to stow into")
     add_ignore_argument(stow_parser)
 
     unstow_parser = sub_parsers.add_parser("unstow")
     unstow_parser.add_argument(
-        "source", nargs="+", help="source directory to unstow from"
+        "package", nargs="+", help="package directory to unstow from"
     )
-    unstow_parser.add_argument("dest", help="destination path to unstow")
+    unstow_parser.add_argument("destination", help="destination path to unstow")
     add_ignore_argument(unstow_parser)
 
     clean_parser = sub_parsers.add_parser("clean")
     clean_parser.add_argument(
-        "source", nargs="+", help="source directory to clean from"
+        "package", nargs="+", help="package directory to clean from"
     )
-    clean_parser.add_argument("dest", help="destination path to clean")
+    clean_parser.add_argument("destination", help="destination path to clean")
     add_ignore_argument(clean_parser)
 
     link_parser = sub_parsers.add_parser("link")
     link_parser.add_argument("source", help="source file or directory to link")
-    link_parser.add_argument("dest", help="destination path to link")
+    link_parser.add_argument("destination", help="destination path to link")
     add_ignore_argument(link_parser)
     return parser
 
@@ -103,10 +103,12 @@ def run(arguments: Sequence[str] | None = None) -> None:
             parser.print_help()
             sys.exit(0)
 
+        first_argument = args.source if args.subcmd == "link" else args.package
+
         try:
             subcmd(
-                args.source,
-                args.dest,
+                first_argument,
+                args.destination,
                 is_silent=args.is_silent,
                 is_dry_run=args.is_dry_run,
                 ignore_patterns=args.ignore_patterns,
