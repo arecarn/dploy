@@ -24,20 +24,22 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
     def __init__(
         self,
         subcmd: str,
-        source: Sequence[str | Path],
-        dest: str | Path,
+        packages: Sequence[str | Path],
+        destination: str | Path,
         is_silent: bool,
         is_dry_run: bool,
         ignore_patterns: list[str] | None,
     ) -> None:
         self.is_unfolding = False
-        super().__init__(subcmd, source, dest, is_silent, is_dry_run, ignore_patterns)
+        super().__init__(
+            subcmd, packages, destination, is_silent, is_dry_run, ignore_patterns
+        )
 
-    def _is_valid_input(self, sources: Sequence[Path], dest: Path) -> bool:
+    def _is_valid_input(self, packages: Sequence[Path], destination: Path) -> bool:
         """
         Check to see if the input is valid
         """
-        return StowInput(self.errors, self.subcmd).is_valid(sources, dest)
+        return StowInput(self.errors, self.subcmd).is_valid(packages, destination)
 
     def get_directory_contents(self, directory: Path) -> list[Path]:
         """
@@ -56,81 +58,89 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
 
         return contents
 
-    def _are_same_file(self, source: Path, dest: Path) -> None:
+    def _are_same_file(self, package: Path, destination: Path) -> None:
         """
-        Abstract method that handles the case when the source and dest are the
-        same file when collecting actions
-        """
-
-    def _are_directories(self, source: Path, dest: Path) -> None:
-        """
-        Abstract method that handles the case when the source and dest are directories
-        same file when collecting actions
+        Abstract method that handles the case when the package and destination
+        are the same file when collecting actions
         """
 
-    def _are_other(self, source: Path, dest: Path) -> None:
+    def _are_directories(self, package: Path, destination: Path) -> None:
+        """
+        Abstract method that handles the case when the package and destination
+        are directories when collecting actions
+        """
+
+    def _are_other(self, package: Path, destination: Path) -> None:
         """
         Abstract method that handles all other cases what to do if no particular
         condition is true cases are found
         """
 
-    def _collect_actions_existing_dest(self, source: Path, dest: Path) -> None:
+    def _collect_actions_existing_dest(self, package: Path, destination: Path) -> None:
         """
         _collect_actions() helper to collect required actions to perform a stow
         command when the destination already exists
         """
-        if utils.is_same_file(dest, source):
-            if dest.is_symlink() or self.is_unfolding:
-                self._are_same_file(source, dest)
+        if utils.is_same_file(destination, package):
+            if destination.is_symlink() or self.is_unfolding:
+                self._are_same_file(package, destination)
             else:
-                self.errors.add(error.SourceIsSameAsDest(self.subcmd, dest.parent))
+                self.errors.add(
+                    error.SourceIsSameAsDest(self.subcmd, destination.parent)
+                )
 
-        elif dest.is_dir() and source.is_dir():
-            self._are_directories(source, dest)
+        elif destination.is_dir() and package.is_dir():
+            self._are_directories(package, destination)
         else:
-            self.errors.add(error.ConflictsWithExistingFile(self.subcmd, source, dest))
+            self.errors.add(
+                error.ConflictsWithExistingFile(self.subcmd, package, destination)
+            )
 
-    def _collect_actions(self, source: Path, dest: Path) -> None:
+    def _collect_actions(self, package: Path, destination: Path) -> None:
         """
         Concrete method to collect required actions to perform a stow
         sub-command
         """
 
-        if self.ignore.should_ignore(source):
-            self.ignore.ignore(source)
+        if self.ignore.should_ignore(package):
+            self.ignore.ignore(package)
             return
 
         if not StowInput(self.errors, self.subcmd).is_valid_collection_input(
-            source, dest
+            package, destination
         ):
             return
 
-        sources = self.get_directory_contents(source)
+        package_contents = self.get_directory_contents(package)
 
-        for subsources in sources:
-            if self.ignore.should_ignore(subsources):
-                self.ignore.ignore(subsources)
+        for entry in package_contents:
+            if self.ignore.should_ignore(entry):
+                self.ignore.ignore(entry)
                 continue
 
-            dest_path = dest / pathlib.Path(subsources.name)
+            destination_path = destination / pathlib.Path(entry.name)
 
-            does_dest_path_exist = False
+            does_destination_path_exist = False
             try:
-                does_dest_path_exist = dest_path.exists()
+                does_destination_path_exist = destination_path.exists()
             except PermissionError:
-                self.errors.add(error.PermissionDenied(self.subcmd, dest_path))
+                self.errors.add(error.PermissionDenied(self.subcmd, destination_path))
                 return
 
-            if does_dest_path_exist:
-                self._collect_actions_existing_dest(subsources, dest_path)
-            elif dest_path.is_symlink():
+            if does_destination_path_exist:
+                self._collect_actions_existing_dest(entry, destination_path)
+            elif destination_path.is_symlink():
                 self.errors.add(
-                    error.ConflictsWithExistingLink(self.subcmd, subsources, dest_path)
+                    error.ConflictsWithExistingLink(
+                        self.subcmd, entry, destination_path
+                    )
                 )
-            elif not dest_path.parent.exists() and not self.is_unfolding:
-                self.errors.add(error.NoSuchDirectory(self.subcmd, dest_path.parent))
+            elif not destination_path.parent.exists() and not self.is_unfolding:
+                self.errors.add(
+                    error.NoSuchDirectory(self.subcmd, destination_path.parent)
+                )
             else:
-                self._are_other(subsources, dest_path)
+                self._are_other(entry, destination_path)
 
 
 class Stow(AbstractBaseStow):
@@ -140,22 +150,24 @@ class Stow(AbstractBaseStow):
 
     def __init__(
         self,
-        source: Sequence[str | Path],
-        dest: str | Path,
+        packages: Sequence[str | Path],
+        destination: str | Path,
         is_silent: bool = True,
         is_dry_run: bool = False,
         ignore_patterns: list[str] | None = None,
     ) -> None:
-        super().__init__("stow", source, dest, is_silent, is_dry_run, ignore_patterns)
+        super().__init__(
+            "stow", packages, destination, is_silent, is_dry_run, ignore_patterns
+        )
 
-    def _unfold(self, source: Path, dest: Path) -> None:
+    def _unfold(self, package: Path, destination: Path) -> None:
         """
         Method unfold a destination directory
         """
         self.is_unfolding = True
-        self.actions.add(actions.UnLink(self.subcmd, dest))
-        self.actions.add(actions.MakeDirectory(self.subcmd, dest))
-        self._collect_actions(source, dest)
+        self.actions.add(actions.UnLink(self.subcmd, destination))
+        self.actions.add(actions.MakeDirectory(self.subcmd, destination))
+        self._collect_actions(package, destination)
         self.is_unfolding = False
 
     def _handle_duplicate_actions(self) -> None:
@@ -210,22 +222,22 @@ class Stow(AbstractBaseStow):
     def _check_for_other_actions(self) -> None:
         self._handle_duplicate_actions()
 
-    def _are_same_file(self, source: Path, dest: Path) -> None:
+    def _are_same_file(self, package: Path, destination: Path) -> None:
         """
-        what to do if source and dest are the same files
+        what to do if package and destination are the same files
         """
         if self.is_unfolding:
-            self.actions.add(actions.SymbolicLink(self.subcmd, source, dest))
+            self.actions.add(actions.SymbolicLink(self.subcmd, package, destination))
         else:
-            self.actions.add(actions.AlreadyLinked(self.subcmd, source, dest))
+            self.actions.add(actions.AlreadyLinked(self.subcmd, package, destination))
 
-    def _are_directories(self, source: Path, dest: Path) -> None:
-        if dest.is_symlink():
-            self._unfold(dest.resolve(), dest)
-        self._collect_actions(source, dest)
+    def _are_directories(self, package: Path, destination: Path) -> None:
+        if destination.is_symlink():
+            self._unfold(destination.resolve(), destination)
+        self._collect_actions(package, destination)
 
-    def _are_other(self, source: Path, dest: Path) -> None:
-        self.actions.add(actions.SymbolicLink(self.subcmd, source, dest))
+    def _are_other(self, package: Path, destination: Path) -> None:
+        self.actions.add(actions.SymbolicLink(self.subcmd, package, destination))
 
 
 class UnStow(AbstractBaseStow):
@@ -235,25 +247,27 @@ class UnStow(AbstractBaseStow):
 
     def __init__(
         self,
-        source: Sequence[str | Path],
-        dest: str | Path,
+        packages: Sequence[str | Path],
+        destination: str | Path,
         is_silent: bool = True,
         is_dry_run: bool = False,
         ignore_patterns: list[str] | None = None,
     ) -> None:
-        super().__init__("unstow", source, dest, is_silent, is_dry_run, ignore_patterns)
+        super().__init__(
+            "unstow", packages, destination, is_silent, is_dry_run, ignore_patterns
+        )
 
-    def _are_same_file(self, source: Path, dest: Path) -> None:
+    def _are_same_file(self, package: Path, destination: Path) -> None:
         """
-        what to do if source and dest are the same files
+        what to do if package and destination are the same files
         """
-        self.actions.add(actions.UnLink(self.subcmd, dest))
+        self.actions.add(actions.UnLink(self.subcmd, destination))
 
-    def _are_directories(self, source: Path, dest: Path) -> None:
-        self._collect_actions(source, dest)
+    def _are_directories(self, package: Path, destination: Path) -> None:
+        self._collect_actions(package, destination)
 
-    def _are_other(self, source: Path, dest: Path) -> None:
-        self.actions.add(actions.AlreadyUnlinked(self.subcmd, source, dest))
+    def _are_other(self, package: Path, destination: Path) -> None:
+        self.actions.add(actions.AlreadyUnlinked(self.subcmd, package, destination))
 
     def _check_for_other_actions(self) -> None:
         self._collect_folding_actions()
@@ -267,7 +281,7 @@ class UnStow(AbstractBaseStow):
             items = utils.get_directory_contents(parent)
             other_links_parents: list[Path] = []
             other_links: list[Path] = []
-            source_parent: Path | None = None
+            package_parent: Path | None = None
             is_normal_files_detected = False
 
             for item in items:
@@ -281,7 +295,7 @@ class UnStow(AbstractBaseStow):
 
                     if does_item_exist and item.is_symlink():
                         resolved_parent = item.resolve().parent
-                        source_parent = resolved_parent
+                        package_parent = resolved_parent
                         other_links_parents.append(resolved_parent)
                         other_links.append(item)
                     else:
@@ -292,95 +306,95 @@ class UnStow(AbstractBaseStow):
                 other_links_parent_count = len(Counter(other_links_parents))
 
                 if other_links_parent_count == 1:
-                    assert source_parent is not None
+                    assert package_parent is not None
                     if utils.is_same_files(
-                        utils.get_directory_contents(source_parent), other_links
+                        utils.get_directory_contents(package_parent), other_links
                     ):
-                        self._fold(source_parent, parent)
+                        self._fold(package_parent, parent)
 
                 elif other_links_parent_count == 0 and not utils.is_same_file(
-                    parent, self.dest_input
+                    parent, self.destination_input
                 ):
                     self.actions.add(actions.RemoveDirectory(self.subcmd, parent))
 
-    def _fold(self, source: Path, dest: Path) -> None:
+    def _fold(self, package: Path, destination: Path) -> None:
         """
         add the required actions for folding
         """
-        self._collect_actions(source, dest)
-        self.actions.add(actions.RemoveDirectory(self.subcmd, dest))
-        self.actions.add(actions.SymbolicLink(self.subcmd, source, dest))
+        self._collect_actions(package, destination)
+        self.actions.add(actions.RemoveDirectory(self.subcmd, destination))
+        self.actions.add(actions.SymbolicLink(self.subcmd, package, destination))
 
 
 class StowInput(main.Input):
     """
-    Input validator for the link command
+    Input validator for the stow command
     """
 
-    def _is_valid_dest(self, dest: Path) -> bool:
+    def _is_valid_destination(self, destination: Path) -> bool:
         """
-        Check if the test argument is valid
+        Check if the destination argument is valid
         """
         result = True
 
-        if not dest.is_dir():
-            self.errors.add(error.NoSuchDirectoryToSubcmdInto(self.subcmd, dest))
+        if not destination.is_dir():
+            self.errors.add(error.NoSuchDirectoryToSubcmdInto(self.subcmd, destination))
             result = False
         else:
-            if not utils.is_directory_writable(dest):
+            if not utils.is_directory_writable(destination):
                 self.errors.add(
-                    error.InsufficientPermissionsToSubcmdTo(self.subcmd, dest)
+                    error.InsufficientPermissionsToSubcmdTo(self.subcmd, destination)
                 )
                 result = False
 
-            if not utils.is_directory_readable(dest):
+            if not utils.is_directory_readable(destination):
                 self.errors.add(
-                    error.InsufficientPermissionsToSubcmdTo(self.subcmd, dest)
+                    error.InsufficientPermissionsToSubcmdTo(self.subcmd, destination)
                 )
                 result = False
 
-            if not utils.is_directory_executable(dest):
+            if not utils.is_directory_executable(destination):
                 self.errors.add(
-                    error.InsufficientPermissionsToSubcmdTo(self.subcmd, dest)
+                    error.InsufficientPermissionsToSubcmdTo(self.subcmd, destination)
                 )
                 result = False
 
         return result
 
-    def _is_valid_source(self, source: Path) -> bool:
+    def _is_valid_package(self, package: Path) -> bool:
         """
-        Check if the source argument is valid
+        Check if the package argument is valid
         """
         result = True
 
-        if not source.is_dir():
-            self.errors.add(error.NoSuchDirectory(self.subcmd, source))
+        if not package.is_dir():
+            self.errors.add(error.NoSuchDirectory(self.subcmd, package))
             result = False
         else:
-            if not utils.is_directory_readable(source):
+            if not utils.is_directory_readable(package):
                 self.errors.add(
-                    error.InsufficientPermissionsToSubcmdFrom(self.subcmd, source)
+                    error.InsufficientPermissionsToSubcmdFrom(self.subcmd, package)
                 )
                 result = False
 
-            if not utils.is_directory_executable(source):
+            if not utils.is_directory_executable(package):
                 self.errors.add(
-                    error.InsufficientPermissionsToSubcmdFrom(self.subcmd, source)
+                    error.InsufficientPermissionsToSubcmdFrom(self.subcmd, package)
                 )
                 result = False
 
         return result
 
-    def is_valid_collection_input(self, source: Path, dest: Path) -> bool:
+    def is_valid_collection_input(self, package: Path, destination: Path) -> bool:
         """
-        Helper to validate the source and dest parameters passed to
+        Helper to validate the package and destination parameters passed to
         _collect_actions()
         """
         result = True
-        if not self._is_valid_source(source):
+        if not self._is_valid_package(package):
             result = False
 
-        if dest.exists() and not self._is_valid_dest(dest):
+        if destination.exists() and not self._is_valid_destination(destination):
             result = False
         return result
 
@@ -393,22 +407,24 @@ class Clean(main.AbstractBaseSubCommand):
 
     def __init__(
         self,
-        source: Sequence[str | Path],
-        dest: str | Path,
+        packages: Sequence[str | Path],
+        destination: str | Path,
         is_silent: bool,
         is_dry_run: bool,
         ignore_patterns: list[str] | None,
     ) -> None:
-        self.source = [pathlib.Path(s) for s in source]
-        self.dest = pathlib.Path(dest)
+        self.packages = [pathlib.Path(p) for p in packages]
+        self.destination = pathlib.Path(destination)
         self.ignore_patterns = ignore_patterns
-        super().__init__("clean", source, dest, is_silent, is_dry_run, ignore_patterns)
+        super().__init__(
+            "clean", packages, destination, is_silent, is_dry_run, ignore_patterns
+        )
 
-    def _is_valid_input(self, sources: Sequence[Path], dest: Path) -> bool:
+    def _is_valid_input(self, packages: Sequence[Path], destination: Path) -> bool:
         """
         Check to see if the input is valid
         """
-        return StowInput(self.errors, self.subcmd).is_valid(sources, dest)
+        return StowInput(self.errors, self.subcmd).is_valid(packages, destination)
 
     def get_directory_contents(self, directory: Path) -> list[Path]:
         """
@@ -428,18 +444,18 @@ class Clean(main.AbstractBaseSubCommand):
         return contents
 
     def _collect_clean_actions(
-        self, source: Sequence[Path], source_names: set[str], dest: Path
+        self, packages: Sequence[Path], package_names: set[str], destination: Path
     ) -> None:
-        subdests = utils.get_directory_contents(dest)
-        for subdest in subdests:
-            if subdest.is_symlink():
-                link_target = utils.readlink(subdest, absolute_target=True)
-                if not link_target.exists() and not source_names.isdisjoint(
+        subdestinations = utils.get_directory_contents(destination)
+        for subdestination in subdestinations:
+            if subdestination.is_symlink():
+                link_target = utils.readlink(subdestination, absolute_target=True)
+                if not link_target.exists() and not package_names.isdisjoint(
                     set(str(p) for p in link_target.parents)
                 ):
-                    self.actions.add(actions.UnLink(self.subcmd, subdest))
-            elif subdest.is_dir():
-                self._collect_clean_actions(source, source_names, subdest)
+                    self.actions.add(actions.UnLink(self.subcmd, subdestination))
+            elif subdestination.is_dir():
+                self._collect_clean_actions(packages, package_names, subdestination)
 
     def _check_for_other_actions(self) -> None:
         """
@@ -447,7 +463,7 @@ class Clean(main.AbstractBaseSubCommand):
         sub-command
         """
         valid_files: list[Path] = []
-        for a_file in self.source:
+        for a_file in self.packages:
             self.ignore = ignore.Ignore(self.ignore_patterns, a_file)
             if self.ignore.should_ignore(a_file):
                 self.ignore.ignore(a_file)
@@ -456,12 +472,12 @@ class Clean(main.AbstractBaseSubCommand):
             valid_files.append(a_file)
 
             if not StowInput(self.errors, self.subcmd).is_valid_collection_input(
-                a_file, self.dest
+                a_file, self.destination
             ):
                 return
 
         # NOTE: an option to make clean more aggressive is to change f.name to
         # f.parent this could a be a good --option
         files_names = [str(utils.get_absolute_path(f.name)) for f in valid_files]
-        files_names_set = set(files_names)
-        self._collect_clean_actions(valid_files, files_names_set, self.dest)
+        package_names_set = set(files_names)
+        self._collect_clean_actions(valid_files, package_names_set, self.destination)

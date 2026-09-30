@@ -8,8 +8,15 @@ organized by order of importance.
 
 ## [Unreleased] - YYYY-MM-DD
 
+## [0.2.0] - 2026-09-30
+
 ### Changed
 
+- **Breaking:** Renamed `source`/`sources`/`dest` to `package`/`packages`/
+  `destination` across the public API and the CLI, to match the terms
+  `CONTEXT.md` defines. This affects the `stow`, `unstow`, and `clean`
+  function parameters and CLI arguments. The `link` command's argument stays
+  `source`, since it takes a single file or directory, not a package.
 - Switch to uv for dependency management instead of Poetry.
 - Use hatchling as the build system.
 - Switch CI from Travis CI and AppVeyor to GitHub Actions.

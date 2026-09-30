@@ -4,8 +4,8 @@ Dploy is a tool for creating symbolic links similarly to [GNU
 Stow](https://www.gnu.org/software/stow/). It is provided as a CLI tool and
 Python 3.10+ module and supports Windows, Linux, and OSX.
 
-Dploy's command `stow` creates symbolic links to the contents of source
-directories or packages in a specified destination directory. Repeating the
+Dploy's command `stow` creates symbolic links to the contents of packages in a
+specified destination directory. Repeating the
 `stow` command with the same arguments will confirm that the contents of the
 package have been symbolically linked.
 
@@ -20,9 +20,9 @@ that the links to stowed packages have been removed.
 
 ## Basic CLI Usage
 
-* `dploy stow <source-directory>... <destination-directory>`
-* `dploy unstow <source-directory>... <destination-directory>`
-* `dploy clean <source-directory>... <destination-directory>`
+* `dploy stow <package-directory>... <destination-directory>`
+* `dploy unstow <package-directory>... <destination-directory>`
+* `dploy clean <package-directory>... <destination-directory>`
 * `dploy --help`
 
 ## Rationale
@@ -55,7 +55,7 @@ Below are just a few few major points of comparison between GNU stow and Dploy.
 
 * Like Stow, Dploy supports tree folding and tree unfolding.
 
-* Unlike Stow, Dploy requires an explicit source(s) and a destination
+* Unlike Stow, Dploy requires an explicit package(s) and a destination
   directory.
 
 * Unlike Stow, Dploy does not have any concept of ownership, but will only
