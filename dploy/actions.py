@@ -71,7 +71,7 @@ class Actions:
         tally = defaultdict(list)
         for index, action in enumerate(self.actions):
             if isinstance(action, SymbolicLink):
-                tally[action.dest].append(index)
+                tally[action.path].append(index)
         # sort for deterministic output
         return sorted([indices for _, indices in tally.items() if len(indices) > 1])
 
@@ -95,18 +95,18 @@ class SymbolicLink(AbstractBaseAction):
     Action to create a symbolic link relative to the source of the link
     """
 
-    def __init__(self, subcmd: str, source: Path, dest: Path) -> None:
+    def __init__(self, subcmd: str, source: Path, path: Path) -> None:
         super().__init__()
         self.source = source
-        self.source_relative = utils.get_relative_path(source, dest.parent)
+        self.source_relative = utils.get_relative_path(source, path.parent)
         self.subcmd = subcmd
-        self.dest = dest
+        self.path = path
 
     def execute(self) -> None:
-        self.dest.symlink_to(self.source_relative)
+        self.path.symlink_to(self.source_relative)
 
     def __repr__(self) -> str:
-        return f"dploy {self.subcmd}: link {self.dest} => {self.source_relative}"
+        return f"dploy {self.subcmd}: link {self.path} => {self.source_relative}"
 
 
 class AlreadyLinked(AbstractBaseAction):
@@ -114,11 +114,11 @@ class AlreadyLinked(AbstractBaseAction):
     Action to used to print an already linked message
     """
 
-    def __init__(self, subcmd: str, source: Path, dest: Path) -> None:
+    def __init__(self, subcmd: str, source: Path, path: Path) -> None:
         super().__init__()
         self.source = source
-        self.source_relative = utils.get_relative_path(source, dest.parent)
-        self.dest = dest
+        self.source_relative = utils.get_relative_path(source, path.parent)
+        self.path = path
         self.subcmd = subcmd
 
     def execute(self) -> None:
@@ -126,7 +126,7 @@ class AlreadyLinked(AbstractBaseAction):
 
     def __repr__(self) -> str:
         return (
-            f"dploy {self.subcmd}: already linked {self.dest} => {self.source_relative}"
+            f"dploy {self.subcmd}: already linked {self.path} => {self.source_relative}"
         )
 
 
@@ -135,18 +135,18 @@ class AlreadyUnlinked(AbstractBaseAction):
     Action to used to print an already unlinked message
     """
 
-    def __init__(self, subcmd: str, source: Path, dest: Path) -> None:
+    def __init__(self, subcmd: str, source: Path, path: Path) -> None:
         super().__init__()
         self.source = source
-        self.source_relative = utils.get_relative_path(source, dest.parent)
-        self.dest = dest
+        self.source_relative = utils.get_relative_path(source, path.parent)
+        self.path = path
         self.subcmd = subcmd
 
     def execute(self) -> None:
         pass
 
     def __repr__(self) -> str:
-        return f"dploy {self.subcmd}: already unlinked {self.dest} => {self.source_relative}"
+        return f"dploy {self.subcmd}: already unlinked {self.path} => {self.source_relative}"
 
 
 class UnLink(AbstractBaseAction):
