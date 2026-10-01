@@ -8,8 +8,6 @@ organized by order of importance.
 
 ## [Unreleased] - YYYY-MM-DD
 
-## [0.2.0] - 2026-09-30
-
 ### Changed
 
 - **Breaking:** Renamed `source`/`sources`/`dest` to `package`/`packages`/
@@ -26,8 +24,6 @@ organized by order of importance.
 
 - Blank lines in `.dploystowignore`, or an empty `--ignore` pattern, no
   longer crash stow/unstow/clean.
-
-### Removed
 
 ## [0.1.3] - 2026-02-13
 
