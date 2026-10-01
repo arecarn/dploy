@@ -243,6 +243,39 @@ def test_stow_unfolding_with_mutliple_sources(
     verify_unfolded_source_a_and_source_b(dest)
 
 
+def test_stow_unfolding_with_shared_directory_two_levels_deep(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    """
+    source_a and source_b live under unrelated roots (not siblings under
+    one shared parent) and share a directory two levels deep ("x/y") that
+    diverges only at the leaf file. Stowing source_a alone folds "x" into
+    a single link; stowing source_b must unfold all the way down to "y",
+    not just to "x", so source_b's file lands in dest instead of inside
+    source_a's own tree. Unstowing both afterward must also leave dest
+    clean, without conflicting with an existing link.
+    """
+    source_a = tmp_path_factory.mktemp("root_a") / "pkg"
+    source_b = tmp_path_factory.mktemp("root_b") / "pkg"
+    dest = tmp_path_factory.mktemp("dest")
+    (source_a / "x" / "y").mkdir(parents=True)
+    (source_a / "x" / "y" / "one").touch()
+    (source_b / "x" / "y").mkdir(parents=True)
+    (source_b / "x" / "y" / "two").touch()
+
+    dploy.stow([str(source_a)], str(dest))
+    dploy.stow([str(source_b)], str(dest))
+
+    assert (dest / "x" / "y" / "one").resolve() == source_a / "x" / "y" / "one"
+    assert (dest / "x" / "y" / "two").resolve() == source_b / "x" / "y" / "two"
+    assert [p.name for p in (source_a / "x" / "y").iterdir()] == ["one"]
+
+    dploy.unstow([str(source_b)], str(dest))
+    dploy.unstow([str(source_a)], str(dest))
+
+    assert not os.path.exists(dest / "x")
+
+
 @pytest.mark.xfail(
     sys.version_info >= (3, 14),
     reason=(

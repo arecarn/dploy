@@ -24,6 +24,9 @@ organized by order of importance.
 
 - Blank lines in `.dploystowignore`, or an empty `--ignore` pattern, no
   longer crash stow/unstow/clean.
+- Stowing a second package that shares a directory two or more levels deep
+  with an already-stowed package no longer writes into the first package's
+  source tree.
 
 ## [0.1.3] - 2026-02-13
 

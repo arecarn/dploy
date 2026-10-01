@@ -232,9 +232,25 @@ class Stow(AbstractBaseStow):
             self.actions.add(actions.AlreadyLinked(self.subcmd, package, destination))
 
     def _are_directories(self, package: Path, destination: Path) -> None:
-        if destination.is_symlink():
+        if self._needs_unfolding(destination):
             self._unfold(destination.resolve(), destination)
         self._collect_actions(package, destination)
+
+    def _needs_unfolding(self, destination: Path) -> bool:
+        """
+        Check whether any path component between self.destination_input and
+        destination is itself a symlink, meaning destination is only reached
+        by traversing into another package's folded subtree (not just
+        whether destination itself is a symlink). A shared directory two or
+        more levels deep is missed by a leaf-only symlink check, because
+        only the top of the folded subtree is a literal symlink on disk.
+        """
+        current = self.destination_input
+        for part in destination.relative_to(self.destination_input).parts:
+            current = current / part
+            if current.is_symlink():
+                return True
+        return False
 
     def _are_other(self, package: Path, destination: Path) -> None:
         self.actions.add(actions.SymbolicLink(self.subcmd, package, destination))
