@@ -23,6 +23,7 @@ class Ignore:
     def __init__(self, patterns: Sequence[str] | None, source: Path) -> None:
         input_patterns = [] if patterns is None else patterns
         self.ignored_files: list[Path] = []
+        self.root = source.parent
 
         file = source.parent / pathlib.Path(".dploystowignore")
 
@@ -51,14 +52,20 @@ class Ignore:
         """
         for pattern in self.patterns:
             try:
-                files = sorted(source.parent.glob(pattern))
+                files = sorted(
+                    set(source.parent.glob(pattern)) | set(self.root.glob(pattern))
+                )
             except IndexError:  # the glob result was empty
                 continue
 
             for file in files:
-                if utils.is_same_file(file, source) or source in file.parents:
+                if utils.is_same_file(file, source) or file in source.parents:
                     return True
         return False
+
+    def has_ignored_descendants(self, source: Path) -> bool:
+        """Check whether folding a directory would expose ignored entries."""
+        return any(self.should_ignore(child) for child in source.rglob("*"))
 
     def ignore(self, file: Path) -> None:
         """

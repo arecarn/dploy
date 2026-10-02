@@ -253,7 +253,20 @@ class Stow(AbstractBaseStow):
         return False
 
     def _are_other(self, package: Path, destination: Path) -> None:
-        self.actions.add(actions.SymbolicLink(self.subcmd, package, destination))
+        if package.is_dir() and self.ignore.has_ignored_descendants(package):
+            if not any(
+                isinstance(action, actions.MakeDirectory) and action.path == destination
+                for action in self.actions.actions
+            ):
+                self.actions.add(actions.MakeDirectory(self.subcmd, destination))
+            was_unfolding = self.is_unfolding
+            self.is_unfolding = True
+            try:
+                self._collect_actions(package, destination)
+            finally:
+                self.is_unfolding = was_unfolding
+        else:
+            self.actions.add(actions.SymbolicLink(self.subcmd, package, destination))
 
 
 class UnStow(AbstractBaseStow):
