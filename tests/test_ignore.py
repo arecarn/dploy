@@ -8,14 +8,13 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import pytest
-
 import dploy
 from dploy.ignore import Ignore
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from typing import Any
+
+    import pytest
 
 SUBCMD = "stow"
 
@@ -77,33 +76,34 @@ def test_recursive_ignore_shared_nested_destination(tmp_path: Path) -> None:
         ).exists()
 
 
-@pytest.fixture()
-def shared_directory_package(tmp_path: Path) -> Callable[..., Path]:
+def _make_shared_directory_package(
+    tmp_path: Path, name: str, *, with_ignored_content: bool
+) -> Path:
     """
-    Factory for a package with a "shared" subdirectory, either containing
-    content matched by the "**/*.swp" ignore pattern plus a sibling file, or
-    just a plain file.
+    Build a package with a "shared" subdirectory, either containing content
+    matched by the "**/*.swp" ignore pattern plus a sibling file, or just a
+    plain file.
     """
-
-    def _make(name: str, *, with_ignored_content: bool) -> Path:
-        package = tmp_path / name
-        shared = package / "shared"
-        shared.mkdir(parents=True)
-        if with_ignored_content:
-            (shared / "cache.swp").touch()
-            (shared / "settings.conf").touch()
-        else:
-            (shared / "notes.txt").touch()
-        return package
-
-    return _make
+    package = tmp_path / name
+    shared = package / "shared"
+    shared.mkdir(parents=True)
+    if with_ignored_content:
+        (shared / "cache.swp").touch()
+        (shared / "settings.conf").touch()
+    else:
+        (shared / "notes.txt").touch()
+    return package
 
 
 def test_recursive_ignore_shared_directory_only_one_package_has_ignored_content(
-    tmp_path: Path, shared_directory_package: Callable[..., Path]
+    tmp_path: Path,
 ) -> None:
-    first = shared_directory_package("first", with_ignored_content=False)
-    second = shared_directory_package("second", with_ignored_content=True)
+    first = _make_shared_directory_package(
+        tmp_path, "first", with_ignored_content=False
+    )
+    second = _make_shared_directory_package(
+        tmp_path, "second", with_ignored_content=True
+    )
     destination = tmp_path / "destination"
     destination.mkdir()
 
@@ -115,10 +115,12 @@ def test_recursive_ignore_shared_directory_only_one_package_has_ignored_content(
 
 
 def test_recursive_ignore_shared_directory_only_one_package_has_ignored_content_reversed(
-    tmp_path: Path, shared_directory_package: Callable[..., Path]
+    tmp_path: Path,
 ) -> None:
-    first = shared_directory_package("first", with_ignored_content=True)
-    second = shared_directory_package("second", with_ignored_content=False)
+    first = _make_shared_directory_package(tmp_path, "first", with_ignored_content=True)
+    second = _make_shared_directory_package(
+        tmp_path, "second", with_ignored_content=False
+    )
     destination = tmp_path / "destination"
     destination.mkdir()
 
