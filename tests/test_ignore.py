@@ -5,14 +5,16 @@ Tests for the ignore feature
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import dploy
 from dploy.ignore import Ignore
 
 if TYPE_CHECKING:
-    from pathlib import Path
     from typing import Any
+
+    import pytest
 
 SUBCMD = "stow"
 
@@ -72,6 +74,86 @@ def test_recursive_ignore_shared_nested_destination(tmp_path: Path) -> None:
         assert not (
             destination / ".config" / "editor" / f"settings{index}.conf"
         ).exists()
+
+
+def _make_shared_directory_package(
+    tmp_path: Path, name: str, *, with_ignored_content: bool
+) -> Path:
+    """
+    Build a package with a "shared" subdirectory, either containing content
+    matched by the "**/*.swp" ignore pattern plus a sibling file, or just a
+    plain file.
+    """
+    package = tmp_path / name
+    shared = package / "shared"
+    shared.mkdir(parents=True)
+    if with_ignored_content:
+        (shared / "cache.swp").touch()
+        (shared / "settings.conf").touch()
+    else:
+        (shared / "notes.txt").touch()
+    return package
+
+
+def test_recursive_ignore_shared_directory_only_one_package_has_ignored_content(
+    tmp_path: Path,
+) -> None:
+    first = _make_shared_directory_package(
+        tmp_path, "first", with_ignored_content=False
+    )
+    second = _make_shared_directory_package(
+        tmp_path, "second", with_ignored_content=True
+    )
+    destination = tmp_path / "destination"
+    destination.mkdir()
+
+    dploy.stow([first, second], destination, ignore_patterns=["**/*.swp"])
+
+    assert (destination / "shared" / "notes.txt").is_file()
+    assert (destination / "shared" / "settings.conf").is_file()
+    assert not (destination / "shared" / "cache.swp").exists()
+
+
+def test_recursive_ignore_shared_directory_only_one_package_has_ignored_content_reversed(
+    tmp_path: Path,
+) -> None:
+    first = _make_shared_directory_package(tmp_path, "first", with_ignored_content=True)
+    second = _make_shared_directory_package(
+        tmp_path, "second", with_ignored_content=False
+    )
+    destination = tmp_path / "destination"
+    destination.mkdir()
+
+    dploy.stow([first, second], destination, ignore_patterns=["**/*.swp"])
+
+    assert (destination / "shared" / "notes.txt").is_file()
+    assert (destination / "shared" / "settings.conf").is_file()
+    assert not (destination / "shared" / "cache.swp").exists()
+
+
+def test_has_ignored_descendants_globs_root_once_per_pattern_not_per_descendant(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    package = tmp_path / "package"
+    nested = package / "a" / "b" / "c"
+    nested.mkdir(parents=True)
+    for index in range(20):
+        (nested / f"file{index}.txt").touch()
+
+    ignored = Ignore(["**/*.swp"], package)
+    root_glob_calls = []
+    original_glob = Path.glob
+
+    def counting_glob(self: Path, pattern: str, *args: Any, **kwargs: Any) -> Any:
+        if self == ignored.root and isinstance(pattern, str):
+            root_glob_calls.append(pattern)
+        return original_glob(self, pattern, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "glob", counting_glob)
+
+    ignored.has_ignored_descendants(package)
+
+    assert len(root_glob_calls) <= len(ignored.patterns)
 
 
 def test_ignore_by_ignoring_only_subdirectory(
