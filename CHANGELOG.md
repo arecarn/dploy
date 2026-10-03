@@ -27,6 +27,9 @@ organized by order of importance.
 - Stowing a second package that shares a directory two or more levels deep
   with an already-stowed package no longer writes into the first package's
   source tree.
+- Recursive ignore patterns, like `**/*.swp`, no longer cause dploy to skip
+  the whole folder a matching file lives in, including when that folder is
+  shared with another package being stowed.
 
 ## [0.1.3] - 2026-02-13
 

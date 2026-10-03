@@ -24,6 +24,7 @@ class Ignore:
         input_patterns = [] if patterns is None else patterns
         self.ignored_files: list[Path] = []
         self.root = source.parent
+        self._root_glob_cache: dict[str, list[Path]] = {}
 
         file = source.parent / pathlib.Path(".dploystowignore")
 
@@ -42,6 +43,21 @@ class Ignore:
         except FileNotFoundError:
             pass
 
+    def _root_glob(self, pattern: str) -> list[Path]:
+        """
+        self.root and self.patterns are fixed for the life of this Ignore
+        instance, so each pattern's root-wide match set is computed once and
+        reused. should_ignore() is called once per traversed file, and
+        re-globbing the whole root on every call is the dominant cost for
+        large package trees.
+        """
+        if pattern not in self._root_glob_cache:
+            try:
+                self._root_glob_cache[pattern] = list(self.root.glob(pattern))
+            except IndexError:  # the glob result was empty
+                self._root_glob_cache[pattern] = []
+        return self._root_glob_cache[pattern]
+
     def should_ignore(self, source: Path) -> bool:
         """
         check if a source should be ignored, based on the ignore patterns in
@@ -53,7 +69,7 @@ class Ignore:
         for pattern in self.patterns:
             try:
                 files = sorted(
-                    set(source.parent.glob(pattern)) | set(self.root.glob(pattern))
+                    set(source.parent.glob(pattern)) | set(self._root_glob(pattern))
                 )
             except IndexError:  # the glob result was empty
                 continue

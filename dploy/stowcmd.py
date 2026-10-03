@@ -252,19 +252,54 @@ class Stow(AbstractBaseStow):
                 return True
         return False
 
+    def _is_unfolded_for_ignore(self, destination: Path) -> bool:
+        """
+        Check whether another package sharing `destination` has already
+        triggered an ignore-driven unfold (see _are_other()).
+        """
+        return any(
+            isinstance(action, actions.MakeDirectory) and action.path == destination
+            for action in self.actions.actions
+        )
+
+    def _unfold_for_ignore(self, package: Path, destination: Path) -> None:
+        """
+        Turn `destination` into a real directory instead of a symlink to
+        `package`, so ignored descendants of `package` can be excluded
+        individually. Any sibling package's SymbolicLink action already
+        queued for `destination` is replaced the same way, since it would
+        otherwise collide with the MakeDirectory action added here.
+        """
+        sibling_sources = [
+            action.source
+            for action in self.actions.actions
+            if isinstance(action, actions.SymbolicLink) and action.path == destination
+        ]
+        self.actions.actions = [
+            action
+            for action in self.actions.actions
+            if not (
+                isinstance(action, actions.SymbolicLink) and action.path == destination
+            )
+        ]
+
+        if not self._is_unfolded_for_ignore(destination):
+            self.actions.add(actions.MakeDirectory(self.subcmd, destination))
+
+        was_unfolding = self.is_unfolding
+        self.is_unfolding = True
+        try:
+            for source in sibling_sources:
+                self._collect_actions(source, destination)
+            self._collect_actions(package, destination)
+        finally:
+            self.is_unfolding = was_unfolding
+
     def _are_other(self, package: Path, destination: Path) -> None:
-        if package.is_dir() and self.ignore.has_ignored_descendants(package):
-            if not any(
-                isinstance(action, actions.MakeDirectory) and action.path == destination
-                for action in self.actions.actions
-            ):
-                self.actions.add(actions.MakeDirectory(self.subcmd, destination))
-            was_unfolding = self.is_unfolding
-            self.is_unfolding = True
-            try:
-                self._collect_actions(package, destination)
-            finally:
-                self.is_unfolding = was_unfolding
+        if self._is_unfolded_for_ignore(destination) or (
+            package.is_dir() and self.ignore.has_ignored_descendants(package)
+        ):
+            self._unfold_for_ignore(package, destination)
         else:
             self.actions.add(actions.SymbolicLink(self.subcmd, package, destination))
 
