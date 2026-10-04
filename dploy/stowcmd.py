@@ -60,17 +60,6 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
 
         return contents
 
-    def _add_existing_dest_conflict(self, conflict: error.DployError) -> None:
-        """
-        Record a conflict with an existing destination entry dploy does not
-        manage. With skip_conflicts only that destination is skipped, otherwise
-        the whole sub-command aborts. Either way no action is queued for it.
-        """
-        if self.skip_conflicts:
-            self.errors.skip(conflict)
-        else:
-            self.errors.add(conflict)
-
     def _are_same_file(self, package: Path, destination: Path) -> None:
         """
         Abstract method that handles the case when the package and destination
@@ -89,6 +78,12 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
         condition is true cases are found
         """
 
+    def _handle_conflict(self, conflict: error.DployError) -> None:
+        if self.skip_conflicts:
+            self.errors.skip(conflict)
+        else:
+            self.errors.add(conflict)
+
     def _collect_actions_existing_dest(self, package: Path, destination: Path) -> None:
         """
         _collect_actions() helper to collect required actions to perform a stow
@@ -105,7 +100,7 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
         elif destination.is_dir() and package.is_dir():
             self._are_directories(package, destination)
         else:
-            self._add_existing_dest_conflict(
+            self._handle_conflict(
                 error.ConflictsWithExistingFile(self.subcmd, package, destination)
             )
 
@@ -143,7 +138,7 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
             if does_destination_path_exist:
                 self._collect_actions_existing_dest(entry, destination_path)
             elif destination_path.is_symlink():
-                self._add_existing_dest_conflict(
+                self._handle_conflict(
                     error.ConflictsWithExistingLink(
                         self.subcmd, entry, destination_path
                     )
