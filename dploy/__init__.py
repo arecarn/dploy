@@ -20,11 +20,14 @@ def stow(
     is_silent: bool = True,
     is_dry_run: bool = False,
     ignore_patterns: list[str] | None = None,
+    skip_conflicts: bool = False,
 ) -> None:
     """
     sub command stow
     """
-    stowcmd.Stow(packages, destination, is_silent, is_dry_run, ignore_patterns)
+    stowcmd.Stow(
+        packages, destination, is_silent, is_dry_run, ignore_patterns, skip_conflicts
+    )
 
 
 def unstow(

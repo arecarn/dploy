@@ -21,6 +21,7 @@ class Errors:
 
     def __init__(self, is_silent: bool) -> None:
         self.exceptions: list[DployError] = []
+        self.skipped: list[DployError] = []
         self.is_silent = is_silent
 
     def add(self, error: DployError) -> None:
@@ -29,14 +30,21 @@ class Errors:
         """
         self.exceptions.append(error)
 
+    def skip(self, error: DployError) -> None:
+        """
+        Adds an error that is reported by handle() but does not abort the
+        sub-command; the caller must not queue an action for it
+        """
+        self.skipped.append(error)
+
     def handle(self) -> None:
         """
-        Prints and handles errors
+        Prints all errors, then raises the first one added with add()
         """
+        if not self.is_silent:
+            for exception in self.skipped + self.exceptions:
+                print(exception, file=sys.stderr)
         if len(self.exceptions) > 0:
-            if not self.is_silent:
-                for exception in self.exceptions:
-                    print(exception, file=sys.stderr)
             raise self.exceptions[0]
 
 

@@ -55,6 +55,12 @@ def create_parser() -> argparse.ArgumentParser:
     stow_parser.add_argument("package", nargs="+", help="package directory to stow")
     stow_parser.add_argument("destination", help="destination path to stow into")
     add_ignore_argument(stow_parser)
+    stow_parser.add_argument(
+        "--skip-conflicts",
+        dest="skip_conflicts",
+        action="store_true",
+        help="link what does not conflict with existing files instead of aborting",
+    )
 
     unstow_parser = sub_parsers.add_parser("unstow")
     unstow_parser.add_argument(
@@ -104,17 +110,24 @@ def run(arguments: Sequence[str] | None = None) -> None:
             sys.exit(0)
 
         first_argument = args.source if args.subcmd == "link" else args.package
+        subcmd_options = {}
+        if args.subcmd == "stow":
+            subcmd_options["skip_conflicts"] = args.skip_conflicts
 
         try:
-            subcmd(
+            command = subcmd(
                 first_argument,
                 args.destination,
                 is_silent=args.is_silent,
                 is_dry_run=args.is_dry_run,
                 ignore_patterns=args.ignore_patterns,
+                **subcmd_options,
             )
         except DployError:
             sys.exit(1)
+
+        if command.errors.skipped:
+            sys.exit(2)
 
     except KeyboardInterrupt as error:
         print(error, file=sys.stderr)

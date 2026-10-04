@@ -65,6 +65,61 @@ def test_stow_with_existing_broken_link(source_a: Any, dest: Any) -> None:
         dploy.stow([source_a], dest)
 
 
+def create_partial_conflicts_for_source_a(dest: Any) -> tuple[str, str]:
+    """
+    Create an unmanaged file and a broken link in dest where source_a's
+    aaa/bbb and aaa/ccc would be linked, leaving aaa/aaa free of conflicts.
+    """
+    utils.create_directory(os.path.join(dest, "aaa"))
+    conflicting_file = os.path.join(dest, "aaa", "bbb")
+    utils.create_file(conflicting_file)
+    conflicting_link = os.path.join(dest, "aaa", "ccc")
+    os.symlink("non_existant_source", conflicting_link)
+    return conflicting_file, conflicting_link
+
+
+def test_stow_with_partial_conflicts_links_nothing(source_a: Any, dest: Any) -> None:
+    create_partial_conflicts_for_source_a(dest)
+    with pytest.raises(error.ConflictsWithExistingFile):
+        dploy.stow([source_a], dest)
+    assert not os.path.islink(os.path.join(dest, "aaa", "aaa"))
+
+
+def test_stow_with_skip_conflicts_links_non_conflicting_files(
+    source_a: Any, dest: Any, capsys: Any
+) -> None:
+    conflicting_file, conflicting_link = create_partial_conflicts_for_source_a(dest)
+
+    dploy.stow([source_a], dest, is_silent=False, skip_conflicts=True)
+
+    assert os.readlink(os.path.join(dest, "aaa", "aaa")) == os.path.join(
+        "..", "..", "source_a", "aaa", "aaa"
+    )
+    assert not os.path.islink(conflicting_file)
+    assert os.readlink(conflicting_link) == "non_existant_source"
+
+    _, err = capsys.readouterr()
+    file_conflict = error.ConflictsWithExistingFile(
+        subcmd=SUBCMD,
+        source=os.path.join(source_a, "aaa", "bbb"),
+        dest=conflicting_file,
+    )
+    link_conflict = error.ConflictsWithExistingLink(
+        subcmd=SUBCMD,
+        source=os.path.join(source_a, "aaa", "ccc"),
+        dest=conflicting_link,
+    )
+    assert f"{file_conflict}\n" in err
+    assert f"{link_conflict}\n" in err
+
+
+def test_stow_with_skip_conflicts_keeps_source_conflicts_fatal(
+    source_a: Any, source_c: Any, dest: Any
+) -> None:
+    with pytest.raises(error.ConflictsWithAnotherSource):
+        dploy.stow([source_a, source_c], dest, skip_conflicts=True)
+
+
 def test_stow_with_source_conflicts(source_a: Any, source_c: Any, dest: Any) -> None:
     conflicting_source_files = [
         os.path.join(source_a, "aaa", "aaa"),
