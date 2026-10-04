@@ -93,3 +93,15 @@ def test_cli_with_version_option(capsys: Any) -> None:
         dploy.cli.run(args)
         out, _ = capsys.readouterr()
         assert re.match(r"dploy \d+.\d+\.\d+(-\w+)?\n", out) is not None
+
+
+def test_cli_with_no_folding_option_with_stow_and_unstow(
+    source_a: Any, dest: Any
+) -> None:
+    dploy.cli.run(["--silent", "stow", "--no-folding", source_a, dest])
+    dest_dir = os.path.join(dest, "aaa")
+    assert os.path.isdir(dest_dir) and not os.path.islink(dest_dir)
+    assert os.path.islink(os.path.join(dest_dir, "aaa"))
+
+    dploy.cli.run(["--silent", "unstow", "--no-folding", source_a, dest])
+    assert os.listdir(dest) == []

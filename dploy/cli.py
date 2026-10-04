@@ -28,6 +28,18 @@ def add_ignore_argument(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def add_no_folding_argument(parser: argparse.ArgumentParser) -> None:
+    """
+    adds the no-folding argument to a subcmd parser
+    """
+    parser.add_argument(
+        "--no-folding",
+        dest="is_folding",
+        action="store_false",
+        help="never fold a directory into a single link to a package directory",
+    )
+
+
 def create_parser() -> argparse.ArgumentParser:
     """
     create the CLI argument parser
@@ -55,6 +67,7 @@ def create_parser() -> argparse.ArgumentParser:
     stow_parser.add_argument("package", nargs="+", help="package directory to stow")
     stow_parser.add_argument("destination", help="destination path to stow into")
     add_ignore_argument(stow_parser)
+    add_no_folding_argument(stow_parser)
 
     unstow_parser = sub_parsers.add_parser("unstow")
     unstow_parser.add_argument(
@@ -62,6 +75,7 @@ def create_parser() -> argparse.ArgumentParser:
     )
     unstow_parser.add_argument("destination", help="destination path to unstow")
     add_ignore_argument(unstow_parser)
+    add_no_folding_argument(unstow_parser)
 
     clean_parser = sub_parsers.add_parser("clean")
     clean_parser.add_argument(
@@ -105,6 +119,11 @@ def run(arguments: Sequence[str] | None = None) -> None:
 
         first_argument = args.source if args.subcmd == "link" else args.package
 
+        # only the subcmds whose parser defines --no-folding accept is_folding
+        extra_arguments = {}
+        if hasattr(args, "is_folding"):
+            extra_arguments["is_folding"] = args.is_folding
+
         try:
             subcmd(
                 first_argument,
@@ -112,6 +131,7 @@ def run(arguments: Sequence[str] | None = None) -> None:
                 is_silent=args.is_silent,
                 is_dry_run=args.is_dry_run,
                 ignore_patterns=args.ignore_patterns,
+                **extra_arguments,
             )
         except DployError:
             sys.exit(1)

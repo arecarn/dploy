@@ -262,3 +262,19 @@ def test_unstow_folding_with_multiple_sources_with_execute_permission_unset(
     message = str(error.PermissionDenied(subcmd=SUBCMD, file=dest_dir))
     with pytest.raises(error.PermissionDenied, match=re.escape(message)):
         dploy.unstow([source_a], dest)
+
+
+def test_unstow_with_no_folding(source_a: Any, dest: Any) -> None:
+    dploy.stow([source_a], dest, is_folding=False)
+    dploy.unstow([source_a], dest, is_folding=False)
+    assert os.listdir(dest) == []
+
+
+def test_unstow_with_no_folding_does_not_fold_remaining_links(
+    source_a: Any, source_b: Any, dest: Any
+) -> None:
+    dploy.stow([source_a, source_b], dest)
+    dploy.unstow([source_b], dest, is_folding=False)
+    dest_dir = os.path.join(dest, "aaa")
+    assert os.path.isdir(dest_dir) and not os.path.islink(dest_dir)
+    assert sorted(os.listdir(dest_dir)) == ["aaa", "bbb", "ccc"]

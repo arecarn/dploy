@@ -20,11 +20,14 @@ def stow(
     is_silent: bool = True,
     is_dry_run: bool = False,
     ignore_patterns: list[str] | None = None,
+    is_folding: bool = True,
 ) -> None:
     """
     sub command stow
     """
-    stowcmd.Stow(packages, destination, is_silent, is_dry_run, ignore_patterns)
+    stowcmd.Stow(
+        packages, destination, is_silent, is_dry_run, ignore_patterns, is_folding
+    )
 
 
 def unstow(
@@ -33,11 +36,14 @@ def unstow(
     is_silent: bool = True,
     is_dry_run: bool = False,
     ignore_patterns: list[str] | None = None,
+    is_folding: bool = True,
 ) -> None:
     """
     sub command unstow
     """
-    stowcmd.UnStow(packages, destination, is_silent, is_dry_run, ignore_patterns)
+    stowcmd.UnStow(
+        packages, destination, is_silent, is_dry_run, ignore_patterns, is_folding
+    )
 
 
 def clean(
