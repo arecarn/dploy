@@ -30,6 +30,23 @@ def test_cli_with_stow_with_simple_senario(
     assert out == f"dploy stow: link {d} => {s}\n"
 
 
+def test_cli_with_skip_conflicts_option_with_stow(
+    source_a: Any, dest: Any, capsys: Any
+) -> None:
+    os.mkdir(os.path.join(dest, "aaa"))
+    conflicting_file = os.path.join(dest, "aaa", "bbb")
+    with open(conflicting_file, "w", encoding="utf-8"):
+        pass
+    args = ["stow", "--skip-conflicts", source_a, dest]
+    with pytest.raises(SystemExit) as exit_info:
+        dploy.cli.run(args)
+    assert exit_info.value.code == 2
+    assert not os.path.islink(conflicting_file)
+    assert os.path.islink(os.path.join(dest, "aaa", "aaa"))
+    _, err = capsys.readouterr()
+    assert f"Conflicts with existing file '{conflicting_file}'" in err
+
+
 def test_cli_unstow_with_basic_senario(source_a: Any, dest: Any, capsys: Any) -> None:
     args_stow = ["stow", source_a, dest]
     dploy.cli.run(args_stow)

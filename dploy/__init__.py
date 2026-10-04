@@ -13,6 +13,8 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
 
+    from dploy.error import DployError
+
 
 def stow(
     packages: Sequence[str | Path],
@@ -20,11 +22,18 @@ def stow(
     is_silent: bool = True,
     is_dry_run: bool = False,
     ignore_patterns: list[str] | None = None,
-) -> None:
+    skip_conflicts: bool = False,
+) -> list[DployError]:
     """
     sub command stow
+
+    Returns the conflicts that were skipped because skip_conflicts=True;
+    empty when skip_conflicts is False or nothing was skipped.
     """
-    stowcmd.Stow(packages, destination, is_silent, is_dry_run, ignore_patterns)
+    command = stowcmd.Stow(
+        packages, destination, is_silent, is_dry_run, ignore_patterns, skip_conflicts
+    )
+    return command.errors.skipped
 
 
 def unstow(
