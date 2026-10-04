@@ -23,6 +23,7 @@ def stow(
     is_dry_run: bool = False,
     ignore_patterns: list[str] | None = None,
     skip_conflicts: bool = False,
+    is_folding: bool = True,
 ) -> list[DployError]:
     """
     sub command stow
@@ -31,7 +32,13 @@ def stow(
     empty when skip_conflicts is False or nothing was skipped.
     """
     command = stowcmd.Stow(
-        packages, destination, is_silent, is_dry_run, ignore_patterns, skip_conflicts
+        packages,
+        destination,
+        is_silent,
+        is_dry_run,
+        ignore_patterns,
+        skip_conflicts,
+        is_folding,
     )
     return command.errors.skipped
 
@@ -42,11 +49,14 @@ def unstow(
     is_silent: bool = True,
     is_dry_run: bool = False,
     ignore_patterns: list[str] | None = None,
+    is_folding: bool = True,
 ) -> None:
     """
     sub command unstow
     """
-    stowcmd.UnStow(packages, destination, is_silent, is_dry_run, ignore_patterns)
+    stowcmd.UnStow(
+        packages, destination, is_silent, is_dry_run, ignore_patterns, is_folding
+    )
 
 
 def clean(

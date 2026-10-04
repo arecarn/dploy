@@ -13,6 +13,9 @@ organized by order of importance.
 - Added a `--skip-conflicts` flag to `stow` that links everything that
   doesn't conflict with an existing, unmanaged file instead of aborting the
   whole command. Dploy exits with status `2` when some files were skipped.
+- Added a `--no-folding` flag to `stow` and `unstow`, matching GNU Stow's
+  flag of the same name, that keeps each file as its own individual link
+  instead of folding a destination directory into one link.
 
 ### Changed
 
