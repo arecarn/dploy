@@ -29,8 +29,10 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
         is_silent: bool,
         is_dry_run: bool,
         ignore_patterns: list[str] | None,
+        skip_conflicts: bool = False,
     ) -> None:
         self.is_unfolding = False
+        self.skip_conflicts = skip_conflicts
         super().__init__(
             subcmd, packages, destination, is_silent, is_dry_run, ignore_patterns
         )
@@ -57,6 +59,17 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
             self.errors.add(error.NoSuchDirectory(self.subcmd, directory))
 
         return contents
+
+    def _add_existing_dest_conflict(self, conflict: error.DployError) -> None:
+        """
+        Record a conflict with an existing destination entry dploy does not
+        manage. With skip_conflicts only that destination is skipped, otherwise
+        the whole sub-command aborts. Either way no action is queued for it.
+        """
+        if self.skip_conflicts:
+            self.errors.skip(conflict)
+        else:
+            self.errors.add(conflict)
 
     def _are_same_file(self, package: Path, destination: Path) -> None:
         """
@@ -92,7 +105,7 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
         elif destination.is_dir() and package.is_dir():
             self._are_directories(package, destination)
         else:
-            self.errors.add(
+            self._add_existing_dest_conflict(
                 error.ConflictsWithExistingFile(self.subcmd, package, destination)
             )
 
@@ -130,7 +143,7 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
             if does_destination_path_exist:
                 self._collect_actions_existing_dest(entry, destination_path)
             elif destination_path.is_symlink():
-                self.errors.add(
+                self._add_existing_dest_conflict(
                     error.ConflictsWithExistingLink(
                         self.subcmd, entry, destination_path
                     )
@@ -155,9 +168,16 @@ class Stow(AbstractBaseStow):
         is_silent: bool = True,
         is_dry_run: bool = False,
         ignore_patterns: list[str] | None = None,
+        skip_conflicts: bool = False,
     ) -> None:
         super().__init__(
-            "stow", packages, destination, is_silent, is_dry_run, ignore_patterns
+            "stow",
+            packages,
+            destination,
+            is_silent,
+            is_dry_run,
+            ignore_patterns,
+            skip_conflicts,
         )
 
     def _unfold(self, package: Path, destination: Path) -> None:

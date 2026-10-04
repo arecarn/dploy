@@ -8,6 +8,12 @@ organized by order of importance.
 
 ## [0.2.0] - Unreleased
 
+### Added
+
+- Added a `--skip-conflicts` flag to `stow` that links everything that
+  doesn't conflict with an existing, unmanaged file instead of aborting the
+  whole command. Dploy exits with status `2` when some files were skipped.
+
 ### Changed
 
 - **Breaking:** Renamed `source`/`sources`/`dest` to `package`/`packages`/

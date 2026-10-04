@@ -67,3 +67,10 @@ Below are just a few few major points of comparison between GNU stow and Dploy.
   existed before `stow` created any links inside it. Dploy keeps no state
   across invocations, so it cannot distinguish a directory it created from
   one that already existed.
+
+* `stow`'s `--skip-conflicts` flag is the one opt-in exception to the
+  atomicity described above: files that conflict with an existing,
+  unmanaged destination entry are skipped and reported, while every other
+  file in the package is still linked. `dploy` exits with status `2` when
+  this happens, so a script can tell a partial stow apart from a full
+  success (status `0`) or a fatal error (status `1`).
