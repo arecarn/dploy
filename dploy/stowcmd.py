@@ -350,6 +350,35 @@ class UnStow(AbstractBaseStow):
 
     def _check_for_other_actions(self) -> None:
         self._collect_folding_actions()
+        self._collect_emptied_parent_actions()
+
+    def _collect_emptied_parent_actions(self) -> None:
+        """
+        Remove each directory above a removed directory whose entire contents
+        are also being unlinked or removed, for example a subdirectory
+        cleared while its parent directory only contained that one entry.
+        Must run after _collect_folding_actions(), which queues the first
+        removals. A directory that is folded back into a link is not counted
+        as removed.
+        """
+        relinked = {
+            a.path for a in self.actions.actions if isinstance(a, actions.SymbolicLink)
+        }
+        removed = [
+            a.path
+            for a in self.actions.actions
+            if isinstance(a, actions.RemoveDirectory) and a.path not in relinked
+        ]
+        gone = set(removed) | set(self.actions.get_unlink_paths())
+
+        while removed:
+            parent = removed.pop().parent
+            if parent in gone or utils.is_same_file(parent, self.destination_input):
+                continue
+            if all(item in gone for item in utils.get_directory_contents(parent)):
+                self.actions.add(actions.RemoveDirectory(self.subcmd, parent))
+                gone.add(parent)
+                removed.append(parent)
 
     def _collect_folding_actions(self) -> None:
         """
