@@ -53,7 +53,9 @@ Below are just a few few major points of comparison between GNU stow and Dploy.
   Dploy will exit and indicate why the command can not be completed. This way a
   stow or unstow operation is atomic and never partially done.
 
-* Like Stow, Dploy supports tree folding and tree unfolding.
+* Like Stow, Dploy supports tree folding and tree unfolding. Like Stow's
+  `--no-folding`, passing `--no-folding` to `stow` or `unstow` disables
+  folding, so each file gets its own link inside a real directory.
 
 * Unlike Stow, Dploy requires an explicit package(s) and a destination
   directory.

@@ -360,3 +360,28 @@ def test_stow_unfolding_with_write_only_source_file(
 
     with pytest.raises(error.InsufficientPermissionsToSubcmdFrom):
         dploy.stow([source_a, source_b], dest)
+
+
+def test_stow_with_no_folding(source_a: Any, dest: Any) -> None:
+    dploy.stow([source_a], dest, is_folding=False)
+    dest_dir = os.path.join(dest, "aaa")
+    source_dir = os.path.join("..", "..", "source_a", "aaa")
+    assert os.path.isdir(dest_dir) and not os.path.islink(dest_dir)
+    assert os.readlink(os.path.join(dest_dir, "aaa")) == os.path.join(source_dir, "aaa")
+    assert os.readlink(os.path.join(dest_dir, "bbb")) == os.path.join(source_dir, "bbb")
+    nested_dest_dir = os.path.join(dest_dir, "ccc")
+    assert os.path.isdir(nested_dest_dir) and not os.path.islink(nested_dest_dir)
+    assert os.readlink(os.path.join(nested_dest_dir, "aaa")) == os.path.join(
+        "..", source_dir, "ccc", "aaa"
+    )
+
+
+def test_stow_with_no_folding_with_multiple_sources(
+    source_a: Any, source_b: Any, dest: Any
+) -> None:
+    dploy.stow([source_a, source_b], dest, is_folding=False)
+    for name in ("aaa", "bbb", "ddd", "eee"):
+        assert os.path.islink(os.path.join(dest, "aaa", name))
+    for name in ("ccc", "fff"):
+        nested_dest_dir = os.path.join(dest, "aaa", name)
+        assert os.path.isdir(nested_dest_dir) and not os.path.islink(nested_dest_dir)

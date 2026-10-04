@@ -13,6 +13,9 @@ organized by order of importance.
 - Added a `--skip-conflicts` flag to `stow` that links everything that
   doesn't conflict with an existing, unmanaged file instead of aborting the
   whole command. Dploy exits with status `2` when some files were skipped.
+- Added a `--no-folding` flag to `stow` and `unstow`, matching GNU Stow's
+  flag of the same name, that keeps each file as its own individual link
+  instead of folding a destination directory into one link.
 
 ### Changed
 
@@ -36,6 +39,9 @@ organized by order of importance.
 - Recursive ignore patterns, like `**/*.swp`, no longer cause dploy to skip
   the whole folder a matching file lives in, including when that folder is
   shared with another package being stowed.
+- `unstow` no longer leaves behind an empty directory when all of its
+  contents are removed within the same run, for example a subdirectory
+  cleared while its parent directory only contained that one entry.
 
 ## [0.1.3] - 2026-02-13
 
