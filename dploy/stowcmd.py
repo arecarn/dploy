@@ -29,8 +29,12 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
         is_silent: bool,
         is_dry_run: bool,
         ignore_patterns: list[str] | None,
+        is_folding: bool,
     ) -> None:
         self.is_unfolding = False
+        # When False, stow never links a package directory as a whole and
+        # unstow never folds a directory back into a single link (--no-folding).
+        self.is_folding = is_folding
         super().__init__(
             subcmd, packages, destination, is_silent, is_dry_run, ignore_patterns
         )
@@ -155,9 +159,16 @@ class Stow(AbstractBaseStow):
         is_silent: bool = True,
         is_dry_run: bool = False,
         ignore_patterns: list[str] | None = None,
+        is_folding: bool = True,
     ) -> None:
         super().__init__(
-            "stow", packages, destination, is_silent, is_dry_run, ignore_patterns
+            "stow",
+            packages,
+            destination,
+            is_silent,
+            is_dry_run,
+            ignore_patterns,
+            is_folding,
         )
 
     def _unfold(self, package: Path, destination: Path) -> None:
@@ -252,23 +263,23 @@ class Stow(AbstractBaseStow):
                 return True
         return False
 
-    def _is_unfolded_for_ignore(self, destination: Path) -> bool:
+    def _is_queued_directory(self, destination: Path) -> bool:
         """
         Check whether another package sharing `destination` has already
-        triggered an ignore-driven unfold (see _are_other()).
+        queued it as a real directory (see _are_other()).
         """
         return any(
             isinstance(action, actions.MakeDirectory) and action.path == destination
             for action in self.actions.actions
         )
 
-    def _unfold_for_ignore(self, package: Path, destination: Path) -> None:
+    def _make_directory_instead_of_link(self, package: Path, destination: Path) -> None:
         """
         Turn `destination` into a real directory instead of a symlink to
-        `package`, so ignored descendants of `package` can be excluded
-        individually. Any sibling package's SymbolicLink action already
-        queued for `destination` is replaced the same way, since it would
-        otherwise collide with the MakeDirectory action added here.
+        `package`, and link the contents of `package` into it individually.
+        Any sibling package's SymbolicLink action already queued for
+        `destination` is replaced the same way, since it would otherwise
+        collide with the MakeDirectory action added here.
         """
         sibling_sources = [
             action.source
@@ -283,7 +294,7 @@ class Stow(AbstractBaseStow):
             )
         ]
 
-        if not self._is_unfolded_for_ignore(destination):
+        if not self._is_queued_directory(destination):
             self.actions.add(actions.MakeDirectory(self.subcmd, destination))
 
         was_unfolding = self.is_unfolding
@@ -296,10 +307,14 @@ class Stow(AbstractBaseStow):
             self.is_unfolding = was_unfolding
 
     def _are_other(self, package: Path, destination: Path) -> None:
-        if self._is_unfolded_for_ignore(destination) or (
-            package.is_dir() and self.ignore.has_ignored_descendants(package)
+        # A directory link is avoided when folding is disabled, or when some
+        # of the package directory's descendants are ignored and so must be
+        # left out of `destination`.
+        if self._is_queued_directory(destination) or (
+            package.is_dir()
+            and (not self.is_folding or self.ignore.has_ignored_descendants(package))
         ):
-            self._unfold_for_ignore(package, destination)
+            self._make_directory_instead_of_link(package, destination)
         else:
             self.actions.add(actions.SymbolicLink(self.subcmd, package, destination))
 
@@ -316,9 +331,16 @@ class UnStow(AbstractBaseStow):
         is_silent: bool = True,
         is_dry_run: bool = False,
         ignore_patterns: list[str] | None = None,
+        is_folding: bool = True,
     ) -> None:
         super().__init__(
-            "unstow", packages, destination, is_silent, is_dry_run, ignore_patterns
+            "unstow",
+            packages,
+            destination,
+            is_silent,
+            is_dry_run,
+            ignore_patterns,
+            is_folding,
         )
 
     def _are_same_file(self, package: Path, destination: Path) -> None:
@@ -335,6 +357,34 @@ class UnStow(AbstractBaseStow):
 
     def _check_for_other_actions(self) -> None:
         self._collect_folding_actions()
+        self._collect_emptied_parent_actions()
+
+    def _collect_emptied_parent_actions(self) -> None:
+        """
+        Remove each directory above a removed directory whose entire contents
+        are also being unlinked or removed, e.g. the directories unstow leaves
+        behind after a stow with --no-folding. Must run after
+        _collect_folding_actions(), which queues the first removals. A
+        directory that is folded back into a link is not counted as removed.
+        """
+        relinked = {
+            a.path for a in self.actions.actions if isinstance(a, actions.SymbolicLink)
+        }
+        removed = [
+            a.path
+            for a in self.actions.actions
+            if isinstance(a, actions.RemoveDirectory) and a.path not in relinked
+        ]
+        gone = set(removed) | set(self.actions.get_unlink_paths())
+
+        while removed:
+            parent = removed.pop().parent
+            if parent in gone or utils.is_same_file(parent, self.destination_input):
+                continue
+            if all(item in gone for item in utils.get_directory_contents(parent)):
+                self.actions.add(actions.RemoveDirectory(self.subcmd, parent))
+                gone.add(parent)
+                removed.append(parent)
 
     def _collect_folding_actions(self) -> None:
         """
@@ -370,6 +420,8 @@ class UnStow(AbstractBaseStow):
                 other_links_parent_count = len(Counter(other_links_parents))
 
                 if other_links_parent_count == 1:
+                    if not self.is_folding:
+                        continue
                     assert package_parent is not None
                     if utils.is_same_files(
                         utils.get_directory_contents(package_parent), other_links

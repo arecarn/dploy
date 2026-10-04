@@ -8,6 +8,12 @@ organized by order of importance.
 
 ## [0.2.0] - Unreleased
 
+### Added
+
+- Added a `--no-folding` flag to `stow` and `unstow`, matching GNU Stow's
+  flag of the same name, that keeps each file as its own individual link
+  instead of folding a destination directory into one link.
+
 ### Changed
 
 - **Breaking:** Renamed `source`/`sources`/`dest` to `package`/`packages`/
@@ -30,6 +36,9 @@ organized by order of importance.
 - Recursive ignore patterns, like `**/*.swp`, no longer cause dploy to skip
   the whole folder a matching file lives in, including when that folder is
   shared with another package being stowed.
+- `unstow` no longer leaves behind an empty directory when all of its
+  contents are removed within the same run, for example a subdirectory
+  cleared while its parent directory only contained that one entry.
 
 ## [0.1.3] - 2026-02-13
 
