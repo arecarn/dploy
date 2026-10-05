@@ -405,6 +405,22 @@ def test_unstow_with_dot_in_exist_fold_exist_other_with_dotfiles(
     assert not os.path.exists(os.path.join(dest_with_dotfiles, "aaa", ".ccc"))
 
 
+def test_unstow_with_dotfiles_folds_remaining_package(
+    source_with_dotfiles: Any, source_b: Any, dest_with_dotfiles: Any
+) -> None:
+    """
+    the remaining links are named .aaa, .ccc and bbb in the destination but
+    bbb, dot-aaa and dot-ccc in the package, so they sort differently on each
+    side; folding must not depend on that order
+    """
+    dploy.stow([source_b, source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+    dploy.unstow([source_b], dest_with_dotfiles, dotfiles=True)
+
+    dest_dir = os.path.join(dest_with_dotfiles, "aaa")
+    assert os.path.islink(dest_dir)
+    assert os.readlink(dest_dir) == os.path.join("..", "source_with_dotfiles", "aaa")
+
+
 def test_unstow_with_no_folding(source_a: Any, dest: Any) -> None:
     dploy.stow([source_a], dest, is_folding=False)
     dploy.unstow([source_a], dest, is_folding=False)

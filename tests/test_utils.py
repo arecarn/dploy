@@ -67,3 +67,12 @@ def test_readlink_with_absolute_target(dest: Any, source_a: Any) -> None:
     assert utils.readlink(dest_path, absolute_target=True) == pathlib.Path(target)
     assert utils.readlink(dest_path, absolute_target=True).exists()
     assert utils.readlink(dest_path).exists()
+
+
+def test_is_same_files_ignores_order(dest: Any) -> None:
+    file_a = pathlib.Path(dest) / "aaa"
+    file_b = pathlib.Path(dest) / "bbb"
+    file_a.touch()
+    file_b.touch()
+    assert utils.is_same_files([file_a, file_b], [file_b, file_a])
+    assert not utils.is_same_files([file_a], [file_a, file_b])
