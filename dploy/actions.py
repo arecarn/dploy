@@ -149,6 +149,29 @@ class AlreadyUnlinked(AbstractBaseAction):
         return f"dploy {self.subcmd}: already unlinked {self.path} => {self.source_relative}"
 
 
+class DotfilesMismatch(AbstractBaseAction):
+    """
+    Action used to warn that a translated dotfile link exists but --dotfiles
+    was not passed to unstow, so it was left untouched
+    """
+
+    def __init__(self, subcmd: str, package: Path, dotfile_destination: Path) -> None:
+        super().__init__()
+        self.package = package
+        self.dotfile_destination = dotfile_destination
+        self.subcmd = subcmd
+
+    def execute(self) -> None:
+        pass
+
+    def __repr__(self) -> str:
+        return (
+            f"dploy {self.subcmd}: warning: '{self.dotfile_destination}' looks like it "
+            f"was stowed with --dotfiles; pass --dotfiles to unstow it "
+            f"({self.package.name})"
+        )
+
+
 class UnLink(AbstractBaseAction):
     """
     Action to unlink a symbolic link

@@ -264,6 +264,147 @@ def test_unstow_folding_with_multiple_sources_with_execute_permission_unset(
         dploy.unstow([source_a], dest)
 
 
+def test_unstow_with_dotfiles(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any
+) -> None:
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+    dploy.unstow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, "aaa"))
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, ".bbb"))
+
+
+def mismatch_warning(path: str) -> str:
+    return f"warning: '{path}' looks like it was stowed with --dotfiles"
+
+
+def unstow_without_dotfiles(source: str, dest: str, capsys: Any) -> str:
+    """
+    unstow without --dotfiles and return only what that run printed, dropping
+    anything printed earlier by a stow in the same test
+    """
+    capsys.readouterr()
+    dploy.unstow([source], dest, is_silent=False)
+    return str(capsys.readouterr().out)
+
+
+def make_dot_directory(source: str, dest: str, child: str) -> tuple[str, str]:
+    """
+    create 'dot-ccc' in the source holding one file, and an existing '.ccc'
+    directory in the dest, so stowing with --dotfiles has to unfold it; returns
+    (source directory, dest directory)
+    """
+    source_dir = os.path.join(source, "dot-ccc")
+    utils.create_directory(source_dir)
+    utils.create_file(os.path.join(source_dir, child))
+    dotfile_dir = os.path.join(dest, ".ccc")
+    utils.create_directory(dotfile_dir)
+    return source_dir, dotfile_dir
+
+
+def test_unstow_without_dotfiles_warns_about_dotfile_links(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any, capsys: Any
+) -> None:
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+
+    out = unstow_without_dotfiles(source_with_dotfiles, dest_with_dotfiles, capsys)
+
+    dotfile_link = os.path.join(dest_with_dotfiles, ".bbb")
+    assert os.path.islink(dotfile_link)
+    assert mismatch_warning(dotfile_link) in out
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, "aaa"))
+
+
+def test_unstow_without_dotfiles_does_not_warn_without_dotfile_links(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any, capsys: Any
+) -> None:
+    out = unstow_without_dotfiles(source_with_dotfiles, dest_with_dotfiles, capsys)
+
+    assert "warning" not in out
+
+
+def test_unstow_without_dotfiles_does_not_warn_about_unrelated_links(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any, tmp_path: Any, capsys: Any
+) -> None:
+    os.symlink(str(tmp_path), os.path.join(dest_with_dotfiles, ".bbb"))
+
+    out = unstow_without_dotfiles(source_with_dotfiles, dest_with_dotfiles, capsys)
+
+    assert "warning" not in out
+
+
+def test_unstow_without_dotfiles_warns_about_unfolded_dotfile_directory(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any, capsys: Any
+) -> None:
+    _, dotfile_dir = make_dot_directory(
+        source_with_dotfiles, dest_with_dotfiles, "file"
+    )
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+
+    out = unstow_without_dotfiles(source_with_dotfiles, dest_with_dotfiles, capsys)
+
+    assert os.path.islink(os.path.join(dotfile_dir, "file"))
+    assert mismatch_warning(dotfile_dir) in out
+
+
+def test_unstow_without_dotfiles_warns_about_nested_dotfile_link(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any, capsys: Any
+) -> None:
+    _, dotfile_dir = make_dot_directory(
+        source_with_dotfiles, dest_with_dotfiles, "dot-nested"
+    )
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+
+    out = unstow_without_dotfiles(source_with_dotfiles, dest_with_dotfiles, capsys)
+
+    assert os.path.islink(os.path.join(dotfile_dir, ".nested"))
+    assert mismatch_warning(dotfile_dir) in out
+
+
+def test_unstow_without_dotfiles_does_not_warn_about_unrelated_directory(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any, capsys: Any
+) -> None:
+    _, dotfile_dir = make_dot_directory(
+        source_with_dotfiles, dest_with_dotfiles, "file"
+    )
+    utils.create_file(os.path.join(dotfile_dir, "file"))
+
+    out = unstow_without_dotfiles(source_with_dotfiles, dest_with_dotfiles, capsys)
+
+    assert "warning" not in out
+
+
+def test_unstow_with_dot_in_exist_fold_with_dotfiles(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any
+) -> None:
+    utils.create_directory(os.path.join(dest_with_dotfiles, "aaa"))
+
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+    dploy.unstow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+
+    assert not os.path.islink(os.path.join(dest_with_dotfiles, "aaa"))
+    # see https://github.com/arecarn/dploy/issues/15
+    # assert len(os.listdir(os.path.join(dest_with_dotfiles, 'aaa'))) == 0
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, ".bbb"))
+
+
+def test_unstow_with_dot_in_exist_fold_exist_other_with_dotfiles(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any
+) -> None:
+    utils.create_directory(os.path.join(dest_with_dotfiles, "aaa"))
+    utils.create_file(os.path.join(dest_with_dotfiles, "aaa", ".keep"))
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+    dploy.unstow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+
+    assert os.path.exists(os.path.join(dest_with_dotfiles, "aaa"))
+    assert not os.path.islink(os.path.join(dest_with_dotfiles, "aaa"))
+
+    assert len(os.listdir(os.path.join(dest_with_dotfiles, "aaa"))) == 1
+    assert os.path.exists(os.path.join(dest_with_dotfiles, "aaa", ".keep"))
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, "aaa", ".aaa"))
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, "aaa", ".ccc"))
+
+
 def test_unstow_with_no_folding(source_a: Any, dest: Any) -> None:
     dploy.stow([source_a], dest, is_folding=False)
     dploy.unstow([source_a], dest, is_folding=False)

@@ -25,6 +25,25 @@ that the links to stowed packages have been removed.
 * `dploy clean <package-directory>... <destination-directory>`
 * `dploy --help`
 
+### Dot-file names
+
+`stow` and `unstow` accept `--dotfiles`, which stows a package entry named
+`dot-something` as a destination entry named `.something`:
+
+```
+dploy stow --dotfiles ~/dotfiles/bash ~
+# ~/dotfiles/bash/dot-bashrc  ->  ~/.bashrc
+```
+
+This keeps the files visible in the package directory while they land as
+dot-files in the destination. Pass the flag to `unstow` as well: without it,
+`unstow` looks for a destination named `dot-something`, leaves the
+`.something` link in place, and prints a warning that names it. `clean` is
+unaffected, since it matches links by what they point at rather than by name.
+
+An entry named `dot-` or `dot-.` is left untranslated, since it would
+otherwise resolve to the destination directory or its parent.
+
 ## Rationale
 
 Dploy started out as simple Python script to create symbolic links to my

@@ -112,6 +112,54 @@ def test_cli_with_version_option(capsys: Any) -> None:
         assert re.match(r"dploy \d+.\d+\.\d+(-\w+)?\n", out) is not None
 
 
+def test_cli_stow_with_dotfiles_option(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any, capsys: Any
+) -> None:
+    args = ["stow", "--dotfiles", source_with_dotfiles, dest_with_dotfiles]
+    dploy.cli.run(args)
+    assert os.readlink(os.path.join(dest_with_dotfiles, "aaa")) == os.path.join(
+        "..", "source_with_dotfiles", "aaa"
+    )
+    assert os.readlink(os.path.join(dest_with_dotfiles, ".bbb")) == os.path.join(
+        "..", "source_with_dotfiles", "dot-bbb"
+    )
+
+    out, _ = capsys.readouterr()
+    d = os.path.join(dest_with_dotfiles, "aaa")
+    s = os.path.relpath(os.path.join(source_with_dotfiles, "aaa"), dest_with_dotfiles)
+    d2 = os.path.join(dest_with_dotfiles, ".bbb")
+    s2 = os.path.relpath(
+        os.path.join(source_with_dotfiles, "dot-bbb"), dest_with_dotfiles
+    )
+    assert out == f"dploy stow: link {d} => {s}\ndploy stow: link {d2} => {s2}\n"
+
+
+def test_cli_unstow_with_dotfiles_option(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any, capsys: Any
+) -> None:
+    args = ["stow", "--dotfiles", source_with_dotfiles, dest_with_dotfiles]
+    dploy.cli.run(args)
+    args_unstow = ["unstow", "--dotfiles", source_with_dotfiles, dest_with_dotfiles]
+    dploy.cli.run(args_unstow)
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, "aaa"))
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, ".bbb"))
+
+    out, _ = capsys.readouterr()
+    d = os.path.join(dest_with_dotfiles, "aaa")
+    s = os.path.relpath(os.path.join(source_with_dotfiles, "aaa"), dest_with_dotfiles)
+    d2 = os.path.join(dest_with_dotfiles, ".bbb")
+    s2 = os.path.relpath(
+        os.path.join(source_with_dotfiles, "dot-bbb"), dest_with_dotfiles
+    )
+    expected_output = (
+        f"dploy stow: link {d} => {s}\n"
+        f"dploy stow: link {d2} => {s2}\n"
+        f"dploy unstow: unlink {d} => {s}\n"
+        f"dploy unstow: unlink {d2} => {s2}\n"
+    )
+    assert out == (expected_output)
+
+
 def test_cli_with_no_folding_option_with_stow_and_unstow(
     source_a: Any, dest: Any
 ) -> None:
