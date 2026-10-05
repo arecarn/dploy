@@ -38,8 +38,10 @@ dploy stow --dotfiles ~/dotfiles/bash ~
 This keeps the files visible in the package directory while they land as
 dot-files in the destination. Pass the flag to `unstow` as well: without it,
 `unstow` looks for a destination named `dot-something`, leaves the
-`.something` link in place, and prints a warning that names it. `clean` is
-unaffected, since it matches links by what they point at rather than by name.
+`.something` link in place, and prints a warning that names it. The reverse
+holds too: `unstow --dotfiles` after a `stow` without the flag leaves the
+`dot-something` link in place with a warning. `clean` is unaffected, since it
+matches links by what they point at rather than by name.
 
 An entry named `dot-` or `dot-.` is left untranslated, since it would
 otherwise resolve to the destination directory or its parent.

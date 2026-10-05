@@ -395,36 +395,50 @@ class UnStow(AbstractBaseStow):
         self._collect_actions(package, destination)
 
     def _are_other(self, package: Path, destination: Path) -> None:
-        # without --dotfiles a 'dot-' entry is looked up under its literal
-        # name, so a link made with --dotfiles would otherwise be left behind
-        # while reporting "already unlinked"
-        if not self.dotfiles and package.name.startswith(DOTFILE_PREFIX):
-            dotfile_destination = destination.parent / translate_dotfile_name(
-                package.name
-            )
-            if dotfile_destination != destination and self._is_linked_into(
-                package, dotfile_destination
-            ):
-                self.actions.add(
-                    actions.DotfilesMismatch(self.subcmd, package, dotfile_destination)
+        # a 'dot-' entry is looked up under its translated name with --dotfiles
+        # and under its literal name without it, so a link made with the other
+        # setting would otherwise be left behind while reporting "already
+        # unlinked"
+        other_name = (
+            package.name if self.dotfiles else translate_dotfile_name(package.name)
+        )
+        other_destination = destination.parent / other_name
+        if other_destination != destination and self._is_linked_into(
+            package, other_destination, translated=not self.dotfiles
+        ):
+            self.actions.add(
+                actions.DotfilesMismatch(
+                    self.subcmd, package, other_destination, self.dotfiles
                 )
-                return
+            )
+            return
         self.actions.add(actions.AlreadyUnlinked(self.subcmd, package, destination))
 
-    def _is_linked_into(self, package: Path, target: Path) -> bool:
+    def _is_linked_into(
+        self, package: Path, destination: Path, translated: bool
+    ) -> bool:
         """
-        True if target is a symlink to package, or a real directory (an
-        unfolded stow) holding at least one link to a matching entry of package
+        True if destination is a symlink to package, or a real directory (an
+        unfolded stow) holding at least one link to a matching entry of
+        package. Entries are looked up under their 'dot-' translated names when
+        translated is True and under their literal names otherwise.
         """
-        if target.is_symlink():
-            return utils.is_same_file(target, package)
-        if target.is_dir() and package.is_dir():
+        if destination.is_symlink():
+            return utils.is_same_file(destination, package)
+        if destination.is_dir() and package.is_dir():
             try:
                 entries = utils.get_directory_contents(package)
             except OSError:
                 return False
             return any(
-                self._is_linked_into(entry, target / translate_dotfile_name(entry.name))
+                self._is_linked_into(
+                    entry,
+                    destination
+                    / (
+                        translate_dotfile_name(entry.name) if translated else entry.name
+                    ),
+                    translated,
+                )
                 for entry in entries
             )
         return False

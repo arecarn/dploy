@@ -18,8 +18,8 @@ organized by order of importance.
   instead of folding a destination directory into one link.
 - Added a `--dotfiles` flag to `stow` and `unstow`, matching GNU Stow's flag
   of the same name: a package entry named `dot-foo` is linked as `.foo`. Pass
-  the flag to `unstow` as well; without it, `unstow` warns when it finds links
-  that were made with the flag.
+  the flag to `unstow` as well; `unstow` warns when it finds links that were
+  made with the other setting.
 
 ### Changed
 

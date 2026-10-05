@@ -151,24 +151,31 @@ class AlreadyUnlinked(AbstractBaseAction):
 
 class DotfilesMismatch(AbstractBaseAction):
     """
-    Action used to warn that a translated dotfile link exists but --dotfiles
-    was not passed to unstow, so it was left untouched
+    Action used to warn that a link for a package entry exists under the name
+    the other --dotfiles setting would give it, so it was left untouched.
+    dotfiles is the setting of the unstow that found it.
     """
 
-    def __init__(self, subcmd: str, package: Path, dotfile_destination: Path) -> None:
+    def __init__(
+        self, subcmd: str, package: Path, destination: Path, dotfiles: bool
+    ) -> None:
         super().__init__()
         self.package = package
-        self.dotfile_destination = dotfile_destination
+        self.destination = destination
+        self.dotfiles = dotfiles
         self.subcmd = subcmd
 
     def execute(self) -> None:
         pass
 
     def __repr__(self) -> str:
+        if self.dotfiles:
+            advice = "stowed without --dotfiles; unstow it without --dotfiles"
+        else:
+            advice = "stowed with --dotfiles; pass --dotfiles to unstow it"
         return (
-            f"dploy {self.subcmd}: warning: '{self.dotfile_destination}' looks like it "
-            f"was stowed with --dotfiles; pass --dotfiles to unstow it "
-            f"({self.package.name})"
+            f"dploy {self.subcmd}: warning: '{self.destination}' looks like it was "
+            f"{advice} ({self.package.name})"
         )
 
 
