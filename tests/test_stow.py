@@ -413,7 +413,6 @@ def test_stow_with_dot_in_exist_fold_exist_other_with_dotfiles(
     [
         ("dot-bashrc", ".bashrc"),
         ("dot-config", ".config"),
-        ("dot-..", "..."),
         ("bashrc", "bashrc"),
         (".bashrc", ".bashrc"),
         ("adot-bashrc", "adot-bashrc"),
@@ -421,6 +420,9 @@ def test_stow_with_dot_in_exist_fold_exist_other_with_dotfiles(
         ("dot-", "dot-"),
         # would translate to the destination's parent
         ("dot-.", "dot-."),
+        # a dot after the prefix is left alone, as GNU Stow does
+        ("dot-..", "dot-.."),
+        ("dot-.hidden", "dot-.hidden"),
     ],
 )
 def test_translate_dotfile_name(source_name: str, expected: str) -> None:

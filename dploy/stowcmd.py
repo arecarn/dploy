@@ -23,16 +23,16 @@ def translate_dotfile_name(name: str) -> str:
     translate a 'dot-' prefixed package entry name into its dot-file
     destination name, e.g. 'dot-bashrc' becomes '.bashrc'
 
-    Names that would translate into a path traversal are left alone: 'dot-'
-    would become '.' (the destination itself) and 'dot-.' would become '..'
-    (the destination's parent), either of which would place the link outside
-    the directory being stowed into.
+    A name whose prefix is followed by nothing or by a dot is left alone, as
+    GNU Stow does: 'dot-' would become '.' (the destination itself) and 'dot-.'
+    would become '..' (the destination's parent), either of which would place
+    the link outside the directory being stowed into.
     """
     if not name.startswith(DOTFILE_PREFIX):
         return name
 
     remainder = name[len(DOTFILE_PREFIX) :]
-    if remainder in ("", "."):
+    if not remainder or remainder.startswith("."):
         return name
 
     return "." + remainder

@@ -43,8 +43,9 @@ holds too: `unstow --dotfiles` after a `stow` without the flag leaves the
 `dot-something` link in place with a warning. `clean` is unaffected, since it
 matches links by what they point at rather than by name.
 
-An entry named `dot-` or `dot-.` is left untranslated, since it would
-otherwise resolve to the destination directory or its parent.
+An entry whose name is `dot-` followed by nothing or by a dot (`dot-`,
+`dot-.`, `dot-..`, `dot-.hidden`) is left untranslated, as GNU Stow does; the
+first two would otherwise resolve to the destination directory or its parent.
 
 ## Rationale
 
