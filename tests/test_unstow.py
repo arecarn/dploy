@@ -421,6 +421,23 @@ def test_unstow_with_dotfiles_folds_remaining_package(
     assert os.readlink(dest_dir) == os.path.join("..", "source_with_dotfiles", "aaa")
 
 
+def test_unstow_without_dotfiles_folds_remaining_dotfile_package(
+    source_with_dotfiles: Any, source_b: Any, dest_with_dotfiles: Any
+) -> None:
+    """
+    the links left behind by unstowing source_b all point into
+    source_with_dotfiles/aaa, so the directory is folded back into a single
+    link. Folding must also remove the links that were made with --dotfiles
+    even though this unstow runs without it (GNU Stow 2.4.1 does the same)
+    """
+    dploy.stow([source_b, source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+    dploy.unstow([source_b], dest_with_dotfiles)
+
+    dest_dir = os.path.join(dest_with_dotfiles, "aaa")
+    assert os.path.islink(dest_dir)
+    assert os.readlink(dest_dir) == os.path.join("..", "source_with_dotfiles", "aaa")
+
+
 def test_unstow_with_no_folding(source_a: Any, dest: Any) -> None:
     dploy.stow([source_a], dest, is_folding=False)
     dploy.unstow([source_a], dest, is_folding=False)

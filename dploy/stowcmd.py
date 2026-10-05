@@ -500,18 +500,23 @@ class UnStow(AbstractBaseStow):
                     if utils.is_same_files(
                         utils.get_directory_contents(package_parent), other_links
                     ):
-                        self._fold(package_parent, parent)
+                        self._fold(package_parent, parent, other_links)
 
                 elif other_links_parent_count == 0 and not utils.is_same_file(
                     parent, self.destination_input
                 ):
                     self.actions.add(actions.RemoveDirectory(self.subcmd, parent))
 
-    def _fold(self, package: Path, destination: Path) -> None:
+    def _fold(self, package: Path, destination: Path, links: Sequence[Path]) -> None:
         """
-        add the required actions for folding
+        add the required actions for folding: unlink the remaining links in
+        destination, which all point into package, then replace the directory
+        with a single link to package. The links are unlinked as found rather
+        than looked up again by package entry name, since a link made with
+        --dotfiles is not named after its entry.
         """
-        self._collect_actions(package, destination)
+        for link in links:
+            self.actions.add(actions.UnLink(self.subcmd, link))
         self.actions.add(actions.RemoveDirectory(self.subcmd, destination))
         self.actions.add(actions.SymbolicLink(self.subcmd, package, destination))
 
