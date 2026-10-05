@@ -421,9 +421,8 @@ def test_unstow_with_dot_in_exist_fold_with_dotfiles(
     dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
     dploy.unstow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
 
-    assert not os.path.islink(os.path.join(dest_with_dotfiles, "aaa"))
-    # see https://github.com/arecarn/dploy/issues/15
-    # assert len(os.listdir(os.path.join(dest_with_dotfiles, 'aaa'))) == 0
+    # the emptied directory is removed along with the links inside it
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, "aaa"))
     assert not os.path.exists(os.path.join(dest_with_dotfiles, ".bbb"))
 
 
