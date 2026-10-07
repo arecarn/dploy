@@ -134,10 +134,13 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
 
             does_destination_path_exist = False
             try:
-                does_destination_path_exist = destination_path.exists()
+                destination_path.stat()
+                does_destination_path_exist = True
             except PermissionError:
                 self.errors.add(error.PermissionDenied(self.subcmd, destination_path))
                 return
+            except OSError:
+                does_destination_path_exist = destination_path.exists()
 
             if does_destination_path_exist:
                 self._collect_actions_existing_dest(entry, destination_path)
@@ -412,10 +415,13 @@ class UnStow(AbstractBaseStow):
                 if item not in self.actions.get_unlink_paths():
                     does_item_exist = False
                     try:
-                        does_item_exist = item.exists()
+                        item.stat()
+                        does_item_exist = True
                     except PermissionError:
                         self.errors.add(error.PermissionDenied(self.subcmd, item))
                         return
+                    except OSError:
+                        does_item_exist = item.exists()
 
                     if does_item_exist and item.is_symlink():
                         resolved_parent = item.resolve().parent
