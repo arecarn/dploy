@@ -351,6 +351,39 @@ def test_unstow_without_dotfiles_only_touches_links_in_unfolded_directory(
     assert "already unlinked" not in capsys.readouterr().out
 
 
+def test_unstow_with_links_in_directories_under_both_names(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any, capsys: Any
+) -> None:
+    """
+    'dot-ccc' and '.ccc' are both real directories, each holding some of the
+    package's links. Every link is removed, and an entry linked under one name
+    is not also reported as already unlinked under the other
+    """
+    source_dir, dotfile_dir = make_dot_directory(
+        source_with_dotfiles, dest_with_dotfiles, "x"
+    )
+    utils.create_file(os.path.join(source_dir, "y"))
+    literal_dir = os.path.join(dest_with_dotfiles, "dot-ccc")
+    utils.create_directory(literal_dir)
+    os.symlink(
+        os.path.relpath(os.path.join(source_dir, "x"), dotfile_dir),
+        os.path.join(dotfile_dir, "x"),
+    )
+    os.symlink(
+        os.path.relpath(os.path.join(source_dir, "y"), literal_dir),
+        os.path.join(literal_dir, "y"),
+    )
+    capsys.readouterr()
+
+    dploy.unstow([source_with_dotfiles], dest_with_dotfiles, is_silent=False)
+
+    out = capsys.readouterr().out
+    assert not os.path.lexists(os.path.join(dotfile_dir, "x"))
+    assert not os.path.lexists(os.path.join(literal_dir, "y"))
+    reported = [line for line in out.splitlines() if "dot-ccc" in line]
+    assert reported and not any("already unlinked" in line for line in reported)
+
+
 def test_unstow_with_dotfiles_removes_literal_links_in_unfolded_directory(
     source_with_dotfiles: Any, dest_with_dotfiles: Any
 ) -> None:

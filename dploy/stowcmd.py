@@ -386,6 +386,10 @@ class UnStow(AbstractBaseStow):
         is_folding: bool = True,
         dotfiles: bool = False,
     ) -> None:
+        # package entries whose link was already queued for removal under the
+        # name the flag does not predict; set before super().__init__, which
+        # collects the actions
+        self._unlinked_under_other_name: set[Path] = set()
         super().__init__(
             "unstow",
             packages,
@@ -407,6 +411,8 @@ class UnStow(AbstractBaseStow):
         self._collect_actions(package, destination)
 
     def _are_other(self, package: Path, destination: Path) -> None:
+        if package in self._unlinked_under_other_name:
+            return
         self.actions.add(actions.AlreadyUnlinked(self.subcmd, package, destination))
 
     def _collect_other_name_actions(self, package: Path, destination: Path) -> bool:
@@ -435,6 +441,7 @@ class UnStow(AbstractBaseStow):
             if not utils.is_same_file(destination, package):
                 return False
             self.actions.add(actions.UnLink(self.subcmd, destination))
+            self._unlinked_under_other_name.add(package)
             return True
 
         if not (destination.is_dir() and package.is_dir()):
