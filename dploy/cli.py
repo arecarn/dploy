@@ -28,6 +28,22 @@ def add_ignore_argument(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def add_dotfiles_argument(parser: argparse.ArgumentParser) -> None:
+    """
+    add the --dotfiles argument to a sub-command parser
+    """
+    parser.add_argument(
+        "--dotfiles",
+        dest="dotfiles",
+        action="store_true",
+        help=(
+            "stow a package entry named 'dot-something' as a destination "
+            "entry named '.something'. unstow removes links under either "
+            "name, so it does not need the flag"
+        ),
+    )
+
+
 def add_no_folding_argument(parser: argparse.ArgumentParser) -> None:
     """
     adds the no-folding argument to a subcmd parser
@@ -74,6 +90,7 @@ def create_parser() -> argparse.ArgumentParser:
         help="link what does not conflict with existing files instead of aborting",
     )
     add_no_folding_argument(stow_parser)
+    add_dotfiles_argument(stow_parser)
 
     unstow_parser = sub_parsers.add_parser("unstow")
     unstow_parser.add_argument(
@@ -82,6 +99,7 @@ def create_parser() -> argparse.ArgumentParser:
     unstow_parser.add_argument("destination", help="destination path to unstow")
     add_ignore_argument(unstow_parser)
     add_no_folding_argument(unstow_parser)
+    add_dotfiles_argument(unstow_parser)
 
     clean_parser = sub_parsers.add_parser("clean")
     clean_parser.add_argument(
@@ -125,13 +143,15 @@ def run(arguments: Sequence[str] | None = None) -> None:
 
         first_argument = args.source if args.subcmd == "link" else args.package
 
-        # skip_conflicts only applies to stow; is_folding only applies to the
-        # subcmds whose parser defines --no-folding
+        # skip_conflicts only applies to stow; is_folding and dotfiles only
+        # apply to the subcmds whose parser defines --no-folding / --dotfiles
         command_arguments: dict[str, bool] = {}
         if args.subcmd == "stow":
             command_arguments["skip_conflicts"] = args.skip_conflicts
         if hasattr(args, "is_folding"):
             command_arguments["is_folding"] = args.is_folding
+        if hasattr(args, "dotfiles"):
+            command_arguments["dotfiles"] = args.dotfiles
 
         try:
             command = subcmd(

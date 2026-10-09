@@ -26,6 +26,29 @@ _Avoid_: referent, linked-to path
 A symbolic link whose target no longer exists.
 _Avoid_: broken link, orphaned link, stale link
 
+### Dot-file names
+
+**Dotfile translation**:
+With `--dotfiles`, linking a package entry named `dot-foo` under the destination
+name `.foo`. A name where `dot-` is followed by nothing or by a dot is never
+translated.
+_Avoid_: dot renaming, dot expansion
+
+**Literal name**:
+A package entry's own name, such as `dot-foo`.
+_Avoid_: original name, source name
+
+**Translated name**:
+The name dotfile translation gives an entry, such as `.foo`. For an entry that is
+not translated, it is the same as the literal name.
+_Avoid_: dot name, renamed name
+
+**Matching by target**:
+How unstow finds the links to remove: a link is removed because its target is
+inside the package, whichever of the entry's two names it carries. A file or link
+that does not point into the package is never touched.
+_Avoid_: name matching, flag matching
+
 ### Operations
 
 **Stow**:
@@ -34,7 +57,8 @@ stowing an already-stowed package reports the links as already in place.
 _Avoid_: install, deploy, apply
 
 **Unstow**:
-Removing the links a stow produced. Also idempotent.
+Removing the links a stow produced, recognised by their target rather than by
+their name. Also idempotent.
 _Avoid_: uninstall, remove, undeploy
 
 **Clean**:
