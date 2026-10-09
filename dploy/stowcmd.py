@@ -672,18 +672,18 @@ class Clean(main.AbstractBaseSubCommand):
         return contents
 
     def _collect_clean_actions(
-        self, packages: Sequence[Path], package_names: set[str], destination: Path
+        self, packages: Sequence[Path], package_paths: set[str], destination: Path
     ) -> None:
-        subdestinations = utils.get_directory_contents(destination)
+        subdestinations = self.get_directory_contents(destination)
         for subdestination in subdestinations:
             if subdestination.is_symlink():
                 link_target = utils.readlink(subdestination, absolute_target=True)
-                if not link_target.exists() and not package_names.isdisjoint(
+                if not link_target.exists() and not package_paths.isdisjoint(
                     set(str(p) for p in link_target.parents)
                 ):
                     self.actions.add(actions.UnLink(self.subcmd, subdestination))
             elif subdestination.is_dir():
-                self._collect_clean_actions(packages, package_names, subdestination)
+                self._collect_clean_actions(packages, package_paths, subdestination)
 
     def _check_for_other_actions(self) -> None:
         """
@@ -704,8 +704,8 @@ class Clean(main.AbstractBaseSubCommand):
             ):
                 return
 
-        # NOTE: an option to make clean more aggressive is to change f.name to
-        # f.parent this could a be a good --option
-        files_names = [str(utils.get_absolute_path(f.name)) for f in valid_files]
-        package_names_set = set(files_names)
-        self._collect_clean_actions(valid_files, package_names_set, self.destination)
+        # NOTE: an option to make clean more aggressive is to match against a
+        # package's parent rather than the package itself, this could be a good
+        # --option
+        package_paths = {str(utils.get_absolute_path(f)) for f in valid_files}
+        self._collect_clean_actions(valid_files, package_paths, self.destination)

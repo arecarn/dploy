@@ -45,6 +45,10 @@ organized by order of importance.
 - `unstow` no longer leaves behind an empty directory when all of its
   contents are removed within the same run, for example a subdirectory
   cleared while its parent directory only contained that one entry.
+- `clean` now removes dangling links. It previously removed nothing, because
+  it could not match a link to its package unless the package sat directly in
+  the working directory and the link's target had no `..` in it. An unreadable
+  directory is now reported as an error instead of crashing.
 
 ## [0.1.3] - 2026-02-13
 
