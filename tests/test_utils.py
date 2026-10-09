@@ -94,7 +94,7 @@ def test_exists_or_raise_permission_error_with_symlink_loop(dest: Any) -> None:
 def test_exists_or_raise_permission_error_without_permission(dest: Any) -> None:
     locked = os.path.join(dest, "locked")
     os.mkdir(locked)
-    open(os.path.join(locked, "file"), "w").close()
+    pathlib.Path(locked, "file").touch()
     tests_utils.remove_execute_permission(locked)
     try:
         with pytest.raises(PermissionError):
