@@ -24,6 +24,7 @@ def stow(
     ignore_patterns: list[str] | None = None,
     skip_conflicts: bool = False,
     is_folding: bool = True,
+    dotfiles: bool = False,
 ) -> list[DployError]:
     """
     sub command stow
@@ -39,6 +40,7 @@ def stow(
         ignore_patterns,
         skip_conflicts,
         is_folding,
+        dotfiles,
     )
     return command.errors.skipped
 
@@ -50,12 +52,19 @@ def unstow(
     is_dry_run: bool = False,
     ignore_patterns: list[str] | None = None,
     is_folding: bool = True,
+    dotfiles: bool = False,
 ) -> None:
     """
     sub command unstow
     """
     stowcmd.UnStow(
-        packages, destination, is_silent, is_dry_run, ignore_patterns, is_folding
+        packages,
+        destination,
+        is_silent,
+        is_dry_run,
+        ignore_patterns,
+        is_folding,
+        dotfiles,
     )
 
 

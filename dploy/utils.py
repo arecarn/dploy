@@ -64,10 +64,10 @@ def is_same_file(file1: Path, file2: Path) -> bool:
 
 def is_same_files(files1: Sequence[Path], files2: Sequence[Path]) -> bool:
     """
-    test if two collection of files are equivalent
+    test if two collection of files are equivalent, regardless of order
     """
-    files1_resolved = [f.resolve() for f in files1]
-    files2_resolved = [f.resolve() for f in files2]
+    files1_resolved = sorted(f.resolve() for f in files1)
+    files2_resolved = sorted(f.resolve() for f in files2)
     return files1_resolved == files2_resolved
 
 

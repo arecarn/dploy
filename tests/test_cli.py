@@ -112,6 +112,41 @@ def test_cli_with_version_option(capsys: Any) -> None:
         assert re.match(r"dploy \d+.\d+\.\d+(-\w+)?\n", out) is not None
 
 
+@pytest.mark.parametrize(
+    "unstow_flags", [[], ["--dotfiles"]], ids=["without-flag", "with-flag"]
+)
+def test_cli_with_dotfiles_option_with_stow_and_unstow(
+    source_with_dotfiles: Any,
+    dest_with_dotfiles: Any,
+    capsys: Any,
+    unstow_flags: list[str],
+) -> None:
+    """
+    unstow finds links by what they point at, so it removes the links stow
+    --dotfiles made whether or not it is given the flag
+    """
+    d = os.path.join(dest_with_dotfiles, "aaa")
+    s = os.path.relpath(os.path.join(source_with_dotfiles, "aaa"), dest_with_dotfiles)
+    d2 = os.path.join(dest_with_dotfiles, ".bbb")
+    s2 = os.path.relpath(
+        os.path.join(source_with_dotfiles, "dot-bbb"), dest_with_dotfiles
+    )
+
+    dploy.cli.run(["stow", "--dotfiles", source_with_dotfiles, dest_with_dotfiles])
+    assert os.readlink(d) == os.path.join("..", "source_with_dotfiles", "aaa")
+    assert os.readlink(d2) == os.path.join("..", "source_with_dotfiles", "dot-bbb")
+    out, _ = capsys.readouterr()
+    assert out == f"dploy stow: link {d} => {s}\ndploy stow: link {d2} => {s2}\n"
+
+    dploy.cli.run(["unstow", *unstow_flags, source_with_dotfiles, dest_with_dotfiles])
+    assert not os.path.lexists(d)
+    assert not os.path.lexists(d2)
+    out, _ = capsys.readouterr()
+    assert (
+        out == f"dploy unstow: unlink {d} => {s}\ndploy unstow: unlink {d2} => {s2}\n"
+    )
+
+
 def test_cli_with_no_folding_option_with_stow_and_unstow(
     source_a: Any, dest: Any
 ) -> None:

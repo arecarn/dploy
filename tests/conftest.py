@@ -188,3 +188,44 @@ def file_dploystowignore(tmpdir: Any) -> str:
     name = str(tmpdir.join(".dploystowignore"))
     utils.create_file(name)
     return name
+
+
+@pytest.fixture()
+def source_with_dotfiles(tmpdir: Any) -> Iterator[str]:
+    """
+    a source directory to stow and unstow that contains files and folders named with prefix 'dot-'
+    """
+    name = str(tmpdir.join("source_with_dotfiles"))
+    tree = [
+        {
+            name: [
+                {
+                    "aaa": [
+                        "dot-aaa",
+                        "bbb",
+                        {
+                            "dot-ccc": [
+                                "dot-aaa",
+                                "bbb",
+                            ],
+                        },
+                    ],
+                },
+                "dot-bbb",
+            ],
+        },
+    ]
+    utils.create_tree(tree)
+    yield name
+    utils.remove_tree(name)
+
+
+@pytest.fixture()
+def dest_with_dotfiles(tmpdir: Any) -> Iterator[str]:
+    """
+    a destination directory to stow into or unstow from with dotfiles
+    """
+    name = str(tmpdir.join("dest_with_dotfiles"))
+    utils.create_directory(name)
+    yield name
+    utils.remove_tree(name)

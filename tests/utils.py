@@ -27,6 +27,12 @@ skip_on_windows_permissions = pytest.mark.skipif(
 )
 
 
+skip_on_windows_trailing_dot = pytest.mark.skipif(
+    os.name == "nt",
+    reason="Windows strips a trailing dot from file names, so 'dot-.' cannot exist",
+)
+
+
 def remove_tree(tree: str | os.PathLike) -> None:
     """
     reset the permission of a file and directory tree and remove it

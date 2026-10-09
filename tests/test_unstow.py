@@ -258,6 +258,221 @@ def test_unstow_folding_with_multiple_sources_with_execute_permission_unset(
     assert os.readlink(first_package_link) == link_target
 
 
+def make_dot_directory(source: str, dest: str, child: str) -> tuple[str, str]:
+    """
+    create 'dot-ccc' in the source holding one file, and an existing '.ccc'
+    directory in the dest, so stowing with --dotfiles has to unfold it; returns
+    (source directory, dest directory)
+    """
+    source_dir = os.path.join(source, "dot-ccc")
+    utils.create_directory(source_dir)
+    utils.create_file(os.path.join(source_dir, child))
+    dotfile_dir = os.path.join(dest, ".ccc")
+    utils.create_directory(dotfile_dir)
+    return source_dir, dotfile_dir
+
+
+@pytest.mark.parametrize("unstow_dotfiles", [True, False])
+@pytest.mark.parametrize("stow_dotfiles", [True, False])
+def test_unstow_removes_links_whichever_way_they_were_stowed(
+    source_with_dotfiles: Any,
+    dest_with_dotfiles: Any,
+    stow_dotfiles: bool,
+    unstow_dotfiles: bool,
+) -> None:
+    """
+    unstow finds links by what they point at, so the flag it is given does not
+    have to match the one the stow was given
+    """
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=stow_dotfiles)
+
+    dploy.unstow([source_with_dotfiles], dest_with_dotfiles, dotfiles=unstow_dotfiles)
+
+    assert os.listdir(dest_with_dotfiles) == []
+
+
+@pytest.mark.parametrize("unstow_dotfiles", [True, False])
+def test_unstow_removes_links_stowed_with_and_without_dotfiles(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any, unstow_dotfiles: bool
+) -> None:
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles)
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+    assert os.path.islink(os.path.join(dest_with_dotfiles, "dot-bbb"))
+    assert os.path.islink(os.path.join(dest_with_dotfiles, ".bbb"))
+
+    dploy.unstow([source_with_dotfiles], dest_with_dotfiles, dotfiles=unstow_dotfiles)
+
+    assert os.listdir(dest_with_dotfiles) == []
+
+
+@pytest.mark.parametrize(
+    ("child", "linked_name"), [("file", "file"), ("dot-nested", ".nested")]
+)
+def test_unstow_without_dotfiles_removes_links_in_unfolded_directory(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any, child: str, linked_name: str
+) -> None:
+    _, dotfile_dir = make_dot_directory(source_with_dotfiles, dest_with_dotfiles, child)
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+    link = os.path.join(dotfile_dir, linked_name)
+    assert os.path.islink(link)
+
+    dploy.unstow([source_with_dotfiles], dest_with_dotfiles)
+
+    assert not os.path.lexists(link)
+
+
+@pytest.mark.parametrize("user_file_exists", [True, False])
+def test_unstow_without_dotfiles_only_touches_links_in_unfolded_directory(
+    source_with_dotfiles: Any,
+    dest_with_dotfiles: Any,
+    capsys: Any,
+    user_file_exists: bool,
+) -> None:
+    """
+    inside a directory found under the other name, only links into the package
+    are acted on: a user file where the package has an entry is not a conflict,
+    and a package entry with nothing there is not reported as already unlinked
+    """
+    source_dir, dotfile_dir = make_dot_directory(
+        source_with_dotfiles, dest_with_dotfiles, "file"
+    )
+    utils.create_file(os.path.join(source_dir, "other"))
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+    other = os.path.join(dotfile_dir, "other")
+    os.unlink(other)
+    if user_file_exists:
+        utils.create_file(other)
+    capsys.readouterr()
+
+    dploy.unstow([source_with_dotfiles], dest_with_dotfiles, is_silent=False)
+
+    assert not os.path.lexists(os.path.join(dotfile_dir, "file"))
+    assert os.path.isfile(other) == user_file_exists
+    assert "already unlinked" not in capsys.readouterr().out
+
+
+def test_unstow_with_dotfiles_removes_literal_links_in_unfolded_directory(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any
+) -> None:
+    utils.create_directory(os.path.join(dest_with_dotfiles, "aaa"))
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles)
+    assert os.path.islink(os.path.join(dest_with_dotfiles, "aaa", "dot-ccc"))
+
+    dploy.unstow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+
+    assert os.listdir(dest_with_dotfiles) == []
+
+
+def test_unstow_without_dotfiles_leaves_unrelated_dotfile_alone(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any, capsys: Any
+) -> None:
+    """
+    a real file at the translated name is not dploy's, so it is not a conflict
+    when the flag is off and the entry was never stowed
+    """
+    unrelated = os.path.join(dest_with_dotfiles, ".bbb")
+    utils.create_file(unrelated)
+
+    dploy.unstow([source_with_dotfiles], dest_with_dotfiles, is_silent=False)
+
+    assert os.path.isfile(unrelated)
+    assert "already unlinked" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("dotfiles", "other_name"), [(False, ".bbb"), (True, "dot-bbb")]
+)
+def test_unstow_leaves_unrelated_link_at_the_other_name_alone(
+    source_with_dotfiles: Any,
+    dest_with_dotfiles: Any,
+    tmp_path: Any,
+    dotfiles: bool,
+    other_name: str,
+) -> None:
+    link = os.path.join(dest_with_dotfiles, other_name)
+    os.symlink(str(tmp_path), link)
+
+    dploy.unstow([source_with_dotfiles], dest_with_dotfiles, dotfiles=dotfiles)
+
+    assert os.path.islink(link)
+    assert os.path.samefile(link, str(tmp_path))
+
+
+def test_unstow_without_dotfiles_leaves_unrelated_directory_alone(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any
+) -> None:
+    _, dotfile_dir = make_dot_directory(
+        source_with_dotfiles, dest_with_dotfiles, "file"
+    )
+    unrelated = os.path.join(dotfile_dir, "file")
+    utils.create_file(unrelated)
+
+    dploy.unstow([source_with_dotfiles], dest_with_dotfiles)
+
+    assert os.path.isfile(unrelated)
+
+
+def test_unstow_with_dotfiles_conflicts_with_unrelated_dotfile(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any
+) -> None:
+    utils.create_file(os.path.join(dest_with_dotfiles, ".bbb"))
+
+    with pytest.raises(error.ConflictsWithExistingFile):
+        dploy.unstow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+
+
+def test_unstow_with_dot_in_exist_fold_with_dotfiles(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any
+) -> None:
+    utils.create_directory(os.path.join(dest_with_dotfiles, "aaa"))
+
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+    dploy.unstow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+
+    # the emptied directory is removed along with the links inside it
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, "aaa"))
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, ".bbb"))
+
+
+def test_unstow_with_dot_in_exist_fold_exist_other_with_dotfiles(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any
+) -> None:
+    utils.create_directory(os.path.join(dest_with_dotfiles, "aaa"))
+    utils.create_file(os.path.join(dest_with_dotfiles, "aaa", ".keep"))
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+    dploy.unstow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+
+    assert os.path.exists(os.path.join(dest_with_dotfiles, "aaa"))
+    assert not os.path.islink(os.path.join(dest_with_dotfiles, "aaa"))
+
+    assert len(os.listdir(os.path.join(dest_with_dotfiles, "aaa"))) == 1
+    assert os.path.exists(os.path.join(dest_with_dotfiles, "aaa", ".keep"))
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, "aaa", ".aaa"))
+    assert not os.path.exists(os.path.join(dest_with_dotfiles, "aaa", ".ccc"))
+
+
+@pytest.mark.parametrize("unstow_dotfiles", [True, False])
+def test_unstow_with_dotfiles_folds_remaining_package(
+    source_with_dotfiles: Any,
+    source_b: Any,
+    dest_with_dotfiles: Any,
+    unstow_dotfiles: bool,
+) -> None:
+    """
+    the remaining links are named .aaa, .ccc and bbb in the destination but
+    bbb, dot-aaa and dot-ccc in the package, so they sort differently on each
+    side; folding must not depend on that order. They all point into
+    source_with_dotfiles/aaa, so they are replaced by one link to it, and the
+    unstow does not need to be given the flag the stow was
+    """
+    dploy.stow([source_b, source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+    dploy.unstow([source_b], dest_with_dotfiles, dotfiles=unstow_dotfiles)
+
+    dest_dir = os.path.join(dest_with_dotfiles, "aaa")
+    assert os.path.islink(dest_dir)
+    assert os.readlink(dest_dir) == os.path.join("..", "source_with_dotfiles", "aaa")
+
+
 def test_unstow_with_no_folding(source_a: Any, dest: Any) -> None:
     dploy.stow([source_a], dest, is_folding=False)
     dploy.unstow([source_a], dest, is_folding=False)

@@ -15,6 +15,29 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
+DOTFILE_PREFIX = "dot-"
+
+
+def translate_dotfile_name(name: str) -> str:
+    """
+    translate a 'dot-' prefixed package entry name into its dot-file
+    destination name, e.g. 'dot-bashrc' becomes '.bashrc'
+
+    A name whose prefix is followed by nothing or by a dot is left alone, as
+    GNU Stow does: 'dot-' would become '.' (the destination itself) and 'dot-.'
+    would become '..' (the destination's parent), either of which would place
+    the link outside the directory being stowed into.
+    """
+    if not name.startswith(DOTFILE_PREFIX):
+        return name
+
+    remainder = name[len(DOTFILE_PREFIX) :]
+    if not remainder or remainder.startswith("."):
+        return name
+
+    return "." + remainder
+
+
 class AbstractBaseStow(main.AbstractBaseSubCommand):
     """
     Abstract Base class that contains the shared logic for all of the stow
@@ -31,8 +54,10 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
         ignore_patterns: list[str] | None,
         skip_conflicts: bool = False,
         is_folding: bool = True,
+        dotfiles: bool = False,
     ) -> None:
         self.is_unfolding = False
+        self.dotfiles = dotfiles
         self.skip_conflicts = skip_conflicts
         # When False, stow never links a package directory as a whole and
         # unstow never folds a directory back into a single link (--no-folding).
@@ -82,6 +107,16 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
         condition is true cases are found
         """
 
+    def _collect_other_name_actions(  # pylint: disable=unused-argument
+        self, package: Path, destination: Path
+    ) -> bool:
+        """
+        Abstract method that collects actions for a link to package that exists
+        under the name --dotfiles does not predict. destination is the name it
+        does predict. Returns True if such a link was found.
+        """
+        return False
+
     def _handle_conflict(self, conflict: error.DployError) -> None:
         if self.skip_conflicts:
             self.errors.skip(conflict)
@@ -130,7 +165,11 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
                 self.ignore.ignore(entry)
                 continue
 
-            destination_path = destination / pathlib.Path(entry.name)
+            destination_name = entry.name
+            if self.dotfiles:
+                destination_name = translate_dotfile_name(destination_name)
+            destination_path = destination / pathlib.Path(destination_name)
+            other_name_found = self._collect_other_name_actions(entry, destination_path)
 
             try:
                 does_destination_path_exist = utils.exists_or_raise_permission_error(
@@ -152,7 +191,7 @@ class AbstractBaseStow(main.AbstractBaseSubCommand):
                 self.errors.add(
                     error.NoSuchDirectory(self.subcmd, destination_path.parent)
                 )
-            else:
+            elif not other_name_found:
                 self._are_other(entry, destination_path)
 
 
@@ -170,6 +209,7 @@ class Stow(AbstractBaseStow):
         ignore_patterns: list[str] | None = None,
         skip_conflicts: bool = False,
         is_folding: bool = True,
+        dotfiles: bool = False,
     ) -> None:
         super().__init__(
             "stow",
@@ -180,6 +220,7 @@ class Stow(AbstractBaseStow):
             ignore_patterns,
             skip_conflicts,
             is_folding,
+            dotfiles,
         )
 
     def _unfold(self, package: Path, destination: Path) -> None:
@@ -343,6 +384,7 @@ class UnStow(AbstractBaseStow):
         is_dry_run: bool = False,
         ignore_patterns: list[str] | None = None,
         is_folding: bool = True,
+        dotfiles: bool = False,
     ) -> None:
         super().__init__(
             "unstow",
@@ -352,6 +394,7 @@ class UnStow(AbstractBaseStow):
             is_dry_run,
             ignore_patterns,
             is_folding=is_folding,
+            dotfiles=dotfiles,
         )
 
     def _are_same_file(self, package: Path, destination: Path) -> None:
@@ -365,6 +408,53 @@ class UnStow(AbstractBaseStow):
 
     def _are_other(self, package: Path, destination: Path) -> None:
         self.actions.add(actions.AlreadyUnlinked(self.subcmd, package, destination))
+
+    def _collect_other_name_actions(self, package: Path, destination: Path) -> bool:
+        """
+        Unstow matches links by what they point at, not by the name --dotfiles
+        predicts: a link into package is removed whether it is named 'dot-foo'
+        or '.foo'. Only links into package are touched under the other name, so
+        an unrelated file there is never a conflict.
+        """
+        other_name = (
+            package.name if self.dotfiles else translate_dotfile_name(package.name)
+        )
+        other_destination = destination.parent / other_name
+        if other_destination == destination:
+            return False
+        return self._collect_links_into(package, other_destination)
+
+    def _collect_links_into(self, package: Path, destination: Path) -> bool:
+        """
+        Queue an UnLink for each link under destination that points into
+        package, looking in real directories (an unfolded stow) under both the
+        literal and the 'dot-' translated name of each entry. Anything else is
+        left alone and not reported. Returns True if any link was queued.
+        """
+        if destination.is_symlink():
+            if not utils.is_same_file(destination, package):
+                return False
+            self.actions.add(actions.UnLink(self.subcmd, destination))
+            return True
+
+        if not (destination.is_dir() and package.is_dir()):
+            return False
+
+        try:
+            entries = utils.get_directory_contents(package)
+        except OSError:
+            return False
+
+        found = False
+        for entry in entries:
+            if self.ignore.should_ignore(entry):
+                self.ignore.ignore(entry)
+                continue
+            names = dict.fromkeys((entry.name, translate_dotfile_name(entry.name)))
+            for name in names:
+                if self._collect_links_into(entry, destination / name):
+                    found = True
+        return found
 
     def _check_for_other_actions(self) -> None:
         self._collect_folding_actions()
@@ -436,18 +526,23 @@ class UnStow(AbstractBaseStow):
                     if utils.is_same_files(
                         utils.get_directory_contents(package_parent), other_links
                     ):
-                        self._fold(package_parent, parent)
+                        self._fold(package_parent, parent, other_links)
 
                 elif other_links_parent_count == 0 and not utils.is_same_file(
                     parent, self.destination_input
                 ):
                     self.actions.add(actions.RemoveDirectory(self.subcmd, parent))
 
-    def _fold(self, package: Path, destination: Path) -> None:
+    def _fold(self, package: Path, destination: Path, links: Sequence[Path]) -> None:
         """
-        add the required actions for folding
+        add the required actions for folding: unlink the remaining links in
+        destination, which all point into package, then replace the directory
+        with a single link to package. The links are unlinked as found rather
+        than looked up again by package entry name, since a link made with
+        --dotfiles is not named after its entry.
         """
-        self._collect_actions(package, destination)
+        for link in links:
+            self.actions.add(actions.UnLink(self.subcmd, link))
         self.actions.add(actions.RemoveDirectory(self.subcmd, destination))
         self.actions.add(actions.SymbolicLink(self.subcmd, package, destination))
 

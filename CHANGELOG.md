@@ -16,6 +16,9 @@ organized by order of importance.
 - Added a `--no-folding` flag to `stow` and `unstow`, matching GNU Stow's
   flag of the same name, that keeps each file as its own individual link
   instead of folding a destination directory into one link.
+- Added a `--dotfiles` flag to `stow` and `unstow`, matching GNU Stow's flag
+  of the same name: a package entry named `dot-foo` is linked as `.foo`.
+  `unstow` removes links by what they point at, so it does not need the flag.
 
 ### Changed
 
