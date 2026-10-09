@@ -125,3 +125,17 @@ def test_clean_reports_an_unreadable_subdirectory(
             dploy.clean([source_only_files], dest)
     finally:
         utils.add_read_permission(unreadable)
+
+
+def test_clean_removes_a_dangling_link_created_by_stow_with_dotfiles(
+    source_with_dotfiles: Any, dest_with_dotfiles: Any
+) -> None:
+    # clean has no --dotfiles option: it matches links by where they point,
+    # so the translated '.bbb' name must not matter
+    dploy.stow([source_with_dotfiles], dest_with_dotfiles, dotfiles=True)
+    dest_path = os.path.join(dest_with_dotfiles, ".bbb")
+    assert os.path.islink(dest_path)
+    os.remove(os.path.join(source_with_dotfiles, "dot-bbb"))
+    dploy.clean([source_with_dotfiles], dest_with_dotfiles)
+    assert not os.path.islink(dest_path)
+    assert os.path.islink(os.path.join(dest_with_dotfiles, "aaa"))
