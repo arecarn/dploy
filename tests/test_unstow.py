@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import os
 import re
-import sys
 from typing import TYPE_CHECKING
 
 import pytest
@@ -244,24 +243,19 @@ def test_unstow_folding_with_existing_file_in_dest(
     assert os.path.exists(a_file)
 
 
-@pytest.mark.xfail(
-    sys.version_info >= (3, 14),
-    reason=(
-        "#31: Path.exists() no longer raises PermissionError on 3.14, so the "
-        "permission failure is misreported as a conflict"
-    ),
-    strict=True,
-)
 @utils.skip_on_windows_permissions
 def test_unstow_folding_with_multiple_sources_with_execute_permission_unset(
     source_a: Any, source_b: Any, dest: Any
 ) -> None:
     dploy.stow([source_a, source_b], dest)
+    first_package_link = os.path.join(dest, "aaa", "aaa")
+    link_target = os.readlink(first_package_link)
     utils.remove_execute_permission(source_b)
     dest_dir = os.path.join(dest, "aaa", "ddd")
     message = str(error.PermissionDenied(subcmd=SUBCMD, file=dest_dir))
     with pytest.raises(error.PermissionDenied, match=re.escape(message)):
         dploy.unstow([source_a], dest)
+    assert os.readlink(first_package_link) == link_target
 
 
 def test_unstow_with_no_folding(source_a: Any, dest: Any) -> None:

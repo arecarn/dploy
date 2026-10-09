@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import os
 import re
-import sys
 from typing import TYPE_CHECKING
 
 import pytest
@@ -331,14 +330,6 @@ def test_stow_unfolding_with_shared_directory_two_levels_deep(
     assert not os.path.exists(dest / "x")
 
 
-@pytest.mark.xfail(
-    sys.version_info >= (3, 14),
-    reason=(
-        "#31: Path.exists() no longer raises PermissionError on 3.14, so the "
-        "permission failure is misreported as a conflict"
-    ),
-    strict=True,
-)
 @utils.skip_on_windows_permissions
 def test_stow_unfolding_with_first_sources_execute_permission_removed(
     source_a: Any, source_b: Any, dest: Any
@@ -346,9 +337,23 @@ def test_stow_unfolding_with_first_sources_execute_permission_removed(
     dploy.stow([source_a], dest)
     utils.remove_execute_permission(source_a)
     dest_dir = os.path.join(dest, "aaa")
+    link_target = os.readlink(dest_dir)
     message = str(error.PermissionDenied(subcmd=SUBCMD, file=dest_dir))
     with pytest.raises(error.PermissionDenied, match=re.escape(message)):
         dploy.stow([source_b], dest)
+    assert os.readlink(dest_dir) == link_target
+
+
+def test_stow_with_self_referential_destination_link(
+    source_only_files: Any, dest: Any
+) -> None:
+    dest_file = os.path.join(dest, "aaa")
+    os.symlink("aaa", dest_file)
+
+    with pytest.raises(error.ConflictsWithExistingLink):
+        dploy.stow([source_only_files], dest)
+
+    assert os.readlink(dest_file) == "aaa"
 
 
 @utils.skip_on_windows_permissions
