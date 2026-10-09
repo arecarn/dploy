@@ -413,6 +413,32 @@ def test_stow_with_dot_in_exist_fold_exist_other_with_dotfiles(
     assert not os.path.islink(os.path.join(dest_with_dotfiles, "aaa", ".ccc", "bbb"))
 
 
+def test_stow_with_dotfiles_conflicts_when_two_packages_share_a_translated_name(
+    tmpdir: Any,
+) -> None:
+    """
+    'dot-a' in one package and '.a' in another are the same destination name
+    once translated, so the packages conflict
+    """
+    package_a = tmpdir.mkdir("package_a")
+    package_b = tmpdir.mkdir("package_b")
+    dest = tmpdir.mkdir("dest")
+    utils.create_file(os.path.join(str(package_a), "dot-a"))
+    utils.create_file(os.path.join(str(package_b), ".a"))
+    conflicting_files = [
+        os.path.join(str(package_a), "dot-a"),
+        os.path.join(str(package_b), ".a"),
+    ]
+    message = str(
+        error.ConflictsWithAnotherSource(subcmd=SUBCMD, files=conflicting_files)
+    )
+
+    with pytest.raises(error.ConflictsWithAnotherSource, match=re.escape(message)):
+        dploy.stow([str(package_a), str(package_b)], str(dest), dotfiles=True)
+
+    assert os.listdir(str(dest)) == []
+
+
 @pytest.mark.parametrize(
     ("source_name", "expected"),
     [
