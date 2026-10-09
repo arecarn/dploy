@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from dploy import utils
+from tests import utils as tests_utils
 
 if TYPE_CHECKING:
     from typing import Any
@@ -67,3 +68,36 @@ def test_readlink_with_absolute_target(dest: Any, source_a: Any) -> None:
     assert utils.readlink(dest_path, absolute_target=True) == pathlib.Path(target)
     assert utils.readlink(dest_path, absolute_target=True).exists()
     assert utils.readlink(dest_path).exists()
+
+
+def test_exists_or_raise_permission_error_with_existing_path(dest: Any) -> None:
+    assert utils.exists_or_raise_permission_error(pathlib.Path(dest))
+
+
+def test_exists_or_raise_permission_error_with_missing_path(dest: Any) -> None:
+    assert not utils.exists_or_raise_permission_error(pathlib.Path(dest, "missing"))
+
+
+def test_exists_or_raise_permission_error_with_dangling_link(dest: Any) -> None:
+    link = os.path.join(dest, "dangling")
+    os.symlink("missing", link)
+    assert not utils.exists_or_raise_permission_error(pathlib.Path(link))
+
+
+def test_exists_or_raise_permission_error_with_symlink_loop(dest: Any) -> None:
+    link = os.path.join(dest, "loop")
+    os.symlink("loop", link)
+    assert not utils.exists_or_raise_permission_error(pathlib.Path(link))
+
+
+@tests_utils.skip_on_windows_permissions
+def test_exists_or_raise_permission_error_without_permission(dest: Any) -> None:
+    locked = os.path.join(dest, "locked")
+    os.mkdir(locked)
+    pathlib.Path(locked, "file").touch()
+    tests_utils.remove_execute_permission(locked)
+    try:
+        with pytest.raises(PermissionError):
+            utils.exists_or_raise_permission_error(pathlib.Path(locked, "file"))
+    finally:
+        os.chmod(locked, 0o700)

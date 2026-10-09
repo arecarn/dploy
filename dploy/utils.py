@@ -27,6 +27,23 @@ def get_directory_contents(directory: Path) -> list[Path]:
     return sorted(contents)
 
 
+def exists_or_raise_permission_error(path: Path) -> bool:
+    """
+    test if a path exists, following symlinks
+
+    Unlike Path.exists(), this raises PermissionError on every Python version.
+    Path.exists() stopped doing so in Python 3.14. Any other OSError (such as a
+    missing path or a symlink loop) means the path does not exist.
+    """
+    try:
+        path.stat()
+    except PermissionError:
+        raise
+    except OSError:
+        return False
+    return True
+
+
 def rmtree(tree: Path) -> None:
     """
     a wrapper around shutil.rmtree to recursively delete a directory specified
