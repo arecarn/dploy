@@ -50,6 +50,7 @@ keeps no runtime dependencies.
   users hold the "bypass traverse checking" privilege that `AccessCheck`
   does not model. The OS bypasses the same check, so the answer matches the
   operation.
-- The tests skipped by `skip_on_windows_permissions` stay skipped. They set
-  access with `os.chmod`, which has no effect on Windows. Porting them to
-  `tests/utils.py::deny_acl` is a follow-up.
+- The permission tests run on Windows. Their `remove_*_permission` helpers set
+  a deny entry with `icacls` there, and teardown clears them first. Three
+  tests stay skipped because they need the OS itself to refuse traversal,
+  which the bypass above prevents (`skip_on_windows_traverse_bypass`).
