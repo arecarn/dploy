@@ -181,7 +181,6 @@ def test_directory_helper_sees_inherited_acl_deny(tmp_path: pathlib.Path) -> Non
     tests_utils.deny_acl(parent, "RD", inherit=True)
     try:
         child = parent / "child"
-        # the deny blocks listing parent, but creating child only needs write
         child.mkdir()
         assert not utils.is_directory_readable(child)
     finally:

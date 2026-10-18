@@ -43,10 +43,13 @@ def deny_acl(path: str | os.PathLike, rights: str, *, inherit: bool = False) -> 
     """
     deny Everyone the given icacls rights (e.g. RD, WD, X) on a path
 
-    With inherit, the deny also applies to everything created under a directory.
+    With inherit, the deny applies only to what is created under a directory,
+    not to the directory itself. Removing an inheritable entry makes Windows
+    list the directory to update its children, so denying the directory too
+    would make remove_acl_denies fail with access denied.
     Undo with remove_acl_denies.
     """
-    rights = f"(OI)(CI){rights}" if inherit else f"({rights})"
+    rights = f"(OI)(CI)(IO){rights}" if inherit else f"({rights})"
     subprocess.run(
         ["icacls", os.fspath(path), "/deny", f"{_EVERYONE}:{rights}"],
         check=True,
