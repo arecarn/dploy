@@ -8,6 +8,8 @@ from __future__ import annotations
 import os
 import pathlib
 import shutil
+import stat
+import sys
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -93,39 +95,67 @@ def get_relative_path(path: Path, start_at: Path) -> Path:
     return pathlib.Path(relative_path)
 
 
+# Windows file access rights (winnt.h). Directories reuse the bits: listing is
+# FILE_READ_DATA, adding an entry is FILE_WRITE_DATA, traversing is FILE_EXECUTE.
+_FILE_READ_DATA = 0x0001
+_FILE_WRITE_DATA = 0x0002
+_FILE_EXECUTE = 0x0020
+
+
+def _has_access(path: Path, posix_mode: int, windows_rights: int) -> bool:
+    """
+    check the current user's access to a path, using the ACL on Windows
+
+    `os.access` on Windows ignores ACLs, so a denied path would pass the
+    collect pass and fail mid-execution, breaking the all-or-nothing promise.
+    """
+    if sys.platform == "win32":
+        # imported here because the module needs ctypes.WinDLL at import time
+        from dploy import _winaccess  # pylint: disable=import-outside-toplevel
+
+        return _winaccess.has_access(str(path), windows_rights)
+    return os.access(str(path), posix_mode)
+
+
 def is_file_readable(a_file: Path) -> bool:
     """
     check if a pathlib.Path() file is readable
     """
-    return os.access(str(a_file), os.R_OK)
+    return _has_access(a_file, os.R_OK, _FILE_READ_DATA)
 
 
 def is_file_writable(a_file: Path) -> bool:
     """
     check if a pathlib.Path() file is writable
     """
-    return os.access(str(a_file), os.W_OK)
+    if not _has_access(a_file, os.W_OK, _FILE_WRITE_DATA):
+        return False
+    # the read-only attribute is not in the ACL but blocks writes to a file
+    # (not a directory); os.access reports it, so keep reporting it
+    if sys.platform == "win32":
+        return not os.stat(a_file).st_file_attributes & stat.FILE_ATTRIBUTE_READONLY
+    return True
 
 
 def is_directory_readable(directory: Path) -> bool:
     """
     check if a pathlib.Path() directory is readable
     """
-    return os.access(str(directory), os.R_OK)
+    return _has_access(directory, os.R_OK, _FILE_READ_DATA)
 
 
 def is_directory_writable(directory: Path) -> bool:
     """
     check if a pathlib.Path() directory is writable
     """
-    return os.access(str(directory), os.W_OK)
+    return _has_access(directory, os.W_OK, _FILE_WRITE_DATA)
 
 
 def is_directory_executable(directory: Path) -> bool:
     """
     check if a pathlib.Path() directory is executable
     """
-    return os.access(str(directory), os.X_OK)
+    return _has_access(directory, os.X_OK, _FILE_EXECUTE)
 
 
 def readlink(path: Path, absolute_target: bool = False) -> Path:

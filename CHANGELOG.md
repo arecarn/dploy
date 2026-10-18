@@ -34,6 +34,9 @@ organized by order of importance.
 
 ### Fixed
 
+- On Windows, permission checks now read the file's ACL instead of only the
+  read-only flag, so an unreadable or unwritable path is reported before
+  anything changes rather than raising `PermissionError` part way through.
 - Blank lines in `.dploystowignore`, or an empty `--ignore` pattern, no
   longer crash stow/unstow/clean.
 - Stowing a second package that shares a directory two or more levels deep

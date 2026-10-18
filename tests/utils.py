@@ -7,6 +7,7 @@ from __future__ import annotations
 import os
 import shutil
 import stat
+import subprocess
 from typing import TYPE_CHECKING
 
 import pytest
@@ -25,6 +26,43 @@ skip_on_windows_permissions = pytest.mark.skipif(
         "Windows, so the access failure these tests expect never happens"
     ),
 )
+
+
+only_on_windows = pytest.mark.skipif(
+    os.name != "nt",
+    reason="needs Windows ACLs, which os.chmod cannot set or os.access read",
+)
+
+
+# S-1-1-0 is Everyone. Denying it covers the current user's token without
+# needing the account name, which varies between local, domain and CI users.
+_EVERYONE = "*S-1-1-0"
+
+
+def deny_acl(path: str | os.PathLike, rights: str, *, inherit: bool = False) -> None:
+    """
+    deny Everyone the given icacls rights (e.g. RD, WD, X) on a path
+
+    With inherit, the deny also applies to everything created under a directory.
+    Undo with remove_acl_denies.
+    """
+    rights = f"(OI)(CI){rights}" if inherit else f"({rights})"
+    subprocess.run(
+        ["icacls", os.fspath(path), "/deny", f"{_EVERYONE}:{rights}"],
+        check=True,
+        capture_output=True,
+    )
+
+
+def remove_acl_denies(path: str | os.PathLike) -> None:
+    """
+    remove every deny entry for Everyone that deny_acl put on a path
+    """
+    subprocess.run(
+        ["icacls", os.fspath(path), "/remove:d", _EVERYONE],
+        check=True,
+        capture_output=True,
+    )
 
 
 skip_on_windows_trailing_dot = pytest.mark.skipif(
