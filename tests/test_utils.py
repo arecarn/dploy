@@ -104,13 +104,7 @@ def test_exists_or_raise_permission_error_with_symlink_loop(dest: Any) -> None:
     assert not utils.exists_or_raise_permission_error(pathlib.Path(link))
 
 
-@pytest.mark.skipif(
-    os.name == "nt",
-    reason=(
-        "Windows users hold the bypass-traverse-checking privilege, so a "
-        "directory denied traverse can still be reached through"
-    ),
-)
+@tests_utils.skip_on_windows_traverse_bypass
 def test_exists_or_raise_permission_error_without_permission(dest: Any) -> None:
     locked = os.path.join(dest, "locked")
     os.mkdir(locked)

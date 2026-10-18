@@ -326,6 +326,7 @@ def test_stow_unfolding_with_shared_directory_two_levels_deep(
     assert not os.path.exists(dest / "x")
 
 
+@utils.skip_on_windows_traverse_bypass
 def test_stow_unfolding_with_first_sources_execute_permission_removed(
     source_a: Any, source_b: Any, dest: Any
 ) -> None:

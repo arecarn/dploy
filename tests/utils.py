@@ -54,21 +54,25 @@ def deny_acl(path: str | os.PathLike, rights: str, *, inherit: bool = False) -> 
 _denied_paths: set[str] = set()
 
 
+# icacls acts on a symlink's target, so the registry holds real paths: the link
+# can be removed by the test while its target still carries the deny.
 def _deny(path: str | os.PathLike, rights: str) -> None:
     deny_acl(path, rights)
-    _denied_paths.add(os.path.abspath(path))
+    _denied_paths.add(os.path.realpath(path))
 
 
 def _allow(path: str | os.PathLike) -> None:
-    remove_acl_denies(path)
-    _denied_paths.discard(os.path.abspath(path))
+    real = os.path.realpath(path)
+    if os.path.lexists(real):
+        remove_acl_denies(real)
+    _denied_paths.discard(real)
 
 
 def clear_acl_denies(top: str | os.PathLike) -> None:
     """
     remove the ACL denies set through this module on a path and everything below
     """
-    top = os.path.abspath(top)
+    top = os.path.realpath(top)
     for denied in sorted(_denied_paths):
         if denied == top or denied.startswith(top + os.sep):
             _allow(denied)
@@ -83,6 +87,16 @@ def remove_acl_denies(path: str | os.PathLike) -> None:
         check=True,
         capture_output=True,
     )
+
+
+skip_on_windows_traverse_bypass = pytest.mark.skipif(
+    os.name == "nt",
+    reason=(
+        "Windows users hold the bypass-traverse-checking privilege, so a "
+        "directory denied traverse can still be reached through. These tests "
+        "need the OS to refuse that; dploy's own check is tested elsewhere"
+    ),
+)
 
 
 skip_on_windows_trailing_dot = pytest.mark.skipif(

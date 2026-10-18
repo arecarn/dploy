@@ -238,6 +238,7 @@ def test_unstow_folding_with_existing_file_in_dest(
     assert os.path.exists(a_file)
 
 
+@utils.skip_on_windows_traverse_bypass
 def test_unstow_folding_with_multiple_sources_with_execute_permission_unset(
     source_a: Any, source_b: Any, dest: Any
 ) -> None:
