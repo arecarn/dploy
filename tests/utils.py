@@ -19,15 +19,6 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
 
-skip_on_windows_permissions = pytest.mark.skipif(
-    os.name == "nt",
-    reason=(
-        "#28: os.access and os.chmod do not carry their POSIX meaning on "
-        "Windows, so the access failure these tests expect never happens"
-    ),
-)
-
-
 only_on_windows = pytest.mark.skipif(
     os.name != "nt",
     reason="needs Windows ACLs, which os.chmod cannot set or os.access read",
@@ -57,6 +48,32 @@ def deny_acl(path: str | os.PathLike, rights: str, *, inherit: bool = False) -> 
     )
 
 
+# Paths that deny_acl denied through the helpers below. A directory denied read
+# cannot be listed, which stops os.walk and shutil.rmtree, so teardown clears
+# these first (clear_acl_denies).
+_denied_paths: set[str] = set()
+
+
+def _deny(path: str | os.PathLike, rights: str) -> None:
+    deny_acl(path, rights)
+    _denied_paths.add(os.path.abspath(path))
+
+
+def _allow(path: str | os.PathLike) -> None:
+    remove_acl_denies(path)
+    _denied_paths.discard(os.path.abspath(path))
+
+
+def clear_acl_denies(top: str | os.PathLike) -> None:
+    """
+    remove the ACL denies set through this module on a path and everything below
+    """
+    top = os.path.abspath(top)
+    for denied in sorted(_denied_paths):
+        if denied == top or denied.startswith(top + os.sep):
+            _allow(denied)
+
+
 def remove_acl_denies(path: str | os.PathLike) -> None:
     """
     remove every deny entry for Everyone that deny_acl put on a path
@@ -78,6 +95,7 @@ def remove_tree(tree: str | os.PathLike) -> None:
     """
     reset the permission of a file and directory tree and remove it
     """
+    clear_acl_denies(tree)
     os.chmod(tree, 0o777)
     shutil.rmtree(tree)
 
@@ -86,6 +104,7 @@ def remove_file(file_name: str | os.PathLike) -> None:
     """
     reset the permission of a file and remove it
     """
+    clear_acl_denies(file_name)
     os.chmod(file_name, 0o777)
     os.remove(file_name)
 
@@ -147,6 +166,9 @@ def remove_read_permission(path: str | os.PathLike) -> None:
     """
     change users permissions to a path to write only
     """
+    if os.name == "nt":
+        _deny(path, "RD")
+        return
     mode = os.stat(path)[stat.ST_MODE]
     os.chmod(path, mode & ~stat.S_IRUSR & ~stat.S_IRGRP & ~stat.S_IROTH)
 
@@ -155,6 +177,9 @@ def add_read_permission(path: str | os.PathLike) -> None:
     """
     change users permissions to a path to write only
     """
+    if os.name == "nt":
+        _allow(path)
+        return
     mode = os.stat(path)[stat.ST_MODE]
     os.chmod(path, mode | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
@@ -163,6 +188,9 @@ def remove_write_permission(path: str | os.PathLike) -> None:
     """
     change users permissions to a path to read only
     """
+    if os.name == "nt":
+        _deny(path, "WD")
+        return
     mode = os.stat(path)[stat.ST_MODE]
     os.chmod(path, mode & ~stat.S_IWUSR & ~stat.S_IWGRP & ~stat.S_IWOTH)
 
@@ -171,12 +199,16 @@ def remove_execute_permission(path: str | os.PathLike) -> None:
     """
     change users permissions to a path to read only
     """
+    if os.name == "nt":
+        _deny(path, "X")
+        return
     mode = os.stat(path)[stat.ST_MODE]
     os.chmod(path, mode & ~stat.S_IXUSR & ~stat.S_IXGRP & ~stat.S_IXOTH)
 
 
 def restore_tree_permissions(top_directory: os.PathLike | str) -> None:
     """Reset users's permissions on a directory tree."""
+    clear_acl_denies(top_directory)
     if not os.path.isdir(top_directory):
         raise NotADirectoryError(f"Invalid directory: {top_directory}")
 
