@@ -96,9 +96,13 @@ def get_relative_path(path: Path, start_at: Path) -> Path:
 
 
 # Windows file access rights (winnt.h). Directories reuse the bits: listing is
-# FILE_READ_DATA, adding an entry is FILE_WRITE_DATA, traversing is FILE_EXECUTE.
+# FILE_READ_DATA, adding a file is FILE_WRITE_DATA, traversing is FILE_EXECUTE.
+# Creating a subdirectory or a directory symlink is a separate right, so a
+# writable directory needs both. Removing an entry is not checked: it depends
+# on DELETE on the entry, which the parent's ACL does not tell us.
 _FILE_READ_DATA = 0x0001
 _FILE_WRITE_DATA = 0x0002
+_FILE_ADD_SUBDIRECTORY = 0x0004
 _FILE_EXECUTE = 0x0020
 
 
@@ -148,7 +152,7 @@ def is_directory_writable(directory: Path) -> bool:
     """
     check if a pathlib.Path() directory is writable
     """
-    return _has_access(directory, os.W_OK, _FILE_WRITE_DATA)
+    return _has_access(directory, os.W_OK, _FILE_WRITE_DATA | _FILE_ADD_SUBDIRECTORY)
 
 
 def is_directory_executable(directory: Path) -> bool:

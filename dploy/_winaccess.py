@@ -14,20 +14,28 @@ from __future__ import annotations
 import ctypes
 from ctypes import wintypes
 
-# Generic-to-specific right mapping for files, from winnt.h.
+# How AccessCheck expands generic rights into file rights (winnt.h). Only the
+# desired rights passed to has_access matter to dploy, but AccessCheck requires
+# a full mapping: the last value is what GENERIC_ALL becomes.
 _FILE_GENERIC_READ = 0x120089
 _FILE_GENERIC_WRITE = 0x120116
 _FILE_GENERIC_EXECUTE = 0x1200A0
 _FILE_ALL_ACCESS = 0x1F01FF
 
-_OWNER_GROUP_DACL_SECURITY_INFORMATION = 0x1 | 0x2 | 0x4
+# AccessCheck needs the owner and group as well as the DACL to evaluate
+# CREATOR OWNER entries and the owner's implicit rights.
+_OWNER_SECURITY_INFORMATION = 0x1
+_GROUP_SECURITY_INFORMATION = 0x2
+_DACL_SECURITY_INFORMATION = 0x4
+_OWNER_GROUP_DACL_SECURITY_INFORMATION = (
+    _OWNER_SECURITY_INFORMATION
+    | _GROUP_SECURITY_INFORMATION
+    | _DACL_SECURITY_INFORMATION
+)
 _TOKEN_QUERY = 0x0008
 _TOKEN_DUPLICATE = 0x0002
 _SECURITY_IMPERSONATION = 2
 
-_ERROR_FILE_NOT_FOUND = 2
-_ERROR_PATH_NOT_FOUND = 3
-_ERROR_ACCESS_DENIED = 5
 _ERROR_INSUFFICIENT_BUFFER = 122
 
 
@@ -111,19 +119,17 @@ def _security_descriptor(path: str) -> ctypes.Array[ctypes.c_char] | None:
     """
     read the owner, group and DACL of a path; None if it cannot be read
 
-    A missing path or one whose security descriptor is unreadable yields None,
-    matching `os.access`, which answers False rather than raising for both.
+    Any failure to examine the path yields None, matching `os.access`, which
+    answers False rather than raising for a missing path, a bad name, a
+    filesystem without ACLs, an unreadable descriptor and so on.
     """
     needed = wintypes.DWORD(0)
     # the first call only measures: it fails with ERROR_INSUFFICIENT_BUFFER
     _advapi32.GetFileSecurityW(
         path, _OWNER_GROUP_DACL_SECURITY_INFORMATION, None, 0, ctypes.byref(needed)
     )
-    error = ctypes.get_last_error()
-    if error in (_ERROR_FILE_NOT_FOUND, _ERROR_PATH_NOT_FOUND, _ERROR_ACCESS_DENIED):
+    if ctypes.get_last_error() != _ERROR_INSUFFICIENT_BUFFER:
         return None
-    if error != _ERROR_INSUFFICIENT_BUFFER:
-        _raise_last_error()
 
     buffer = ctypes.create_string_buffer(needed.value)
     if not _advapi32.GetFileSecurityW(
@@ -133,7 +139,7 @@ def _security_descriptor(path: str) -> ctypes.Array[ctypes.c_char] | None:
         needed,
         ctypes.byref(needed),
     ):
-        _raise_last_error()
+        return None
     return buffer
 
 
@@ -165,10 +171,11 @@ def has_access(path: str, rights: int) -> bool:
     """
     check whether the current user is granted every right in `rights` on a path
 
-    `rights` is a mask of specific file rights, e.g. FILE_READ_DATA from winnt.h. Follows
-    symlinks, like `os.access`. Returns False for a path that does not exist
-    or whose security descriptor cannot be read. Raises OSError if the check
-    itself fails, as that means the answer is unknown rather than "no".
+    `rights` is a mask of specific file rights from winnt.h; dploy/utils.py
+    holds the ones it asks for. Every right in the mask must be granted. Follows
+    symlinks, like `os.access`. Returns False for a path it cannot examine (see
+    `_security_descriptor`). Raises OSError only if the token or `AccessCheck`
+    call itself fails, as that means the answer is unknown rather than "no".
     """
     descriptor = _security_descriptor(path)
     if descriptor is None:

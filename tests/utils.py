@@ -48,20 +48,19 @@ def deny_acl(path: str | os.PathLike, rights: str, *, inherit: bool = False) -> 
     )
 
 
-# Paths that deny_acl denied through the helpers below. A directory denied read
-# cannot be listed, which stops os.walk and shutil.rmtree, so teardown clears
-# these first (clear_acl_denies).
+# Real paths that the helpers below denied. A directory denied read cannot be
+# listed, which stops os.walk and shutil.rmtree, so teardown clears these first
+# (clear_acl_denies). Real paths, because icacls acts on a symlink's target: the
+# test can remove the link while its target still carries the deny.
 _denied_paths: set[str] = set()
 
 
-# icacls acts on a symlink's target, so the registry holds real paths: the link
-# can be removed by the test while its target still carries the deny.
 def _deny(path: str | os.PathLike, rights: str) -> None:
     deny_acl(path, rights)
     _denied_paths.add(os.path.realpath(path))
 
 
-def _allow(path: str | os.PathLike) -> None:
+def _clear_deny(path: str | os.PathLike) -> None:
     real = os.path.realpath(path)
     if os.path.lexists(real):
         remove_acl_denies(real)
@@ -75,7 +74,7 @@ def clear_acl_denies(top: str | os.PathLike) -> None:
     top = os.path.realpath(top)
     for denied in sorted(_denied_paths):
         if denied == top or denied.startswith(top + os.sep):
-            _allow(denied)
+            _clear_deny(denied)
 
 
 def remove_acl_denies(path: str | os.PathLike) -> None:
@@ -178,7 +177,7 @@ def create_tree(tree: Any) -> None:
 
 def remove_read_permission(path: str | os.PathLike) -> None:
     """
-    change users permissions to a path to write only
+    remove read permission from a path
     """
     if os.name == "nt":
         _deny(path, "RD")
@@ -189,10 +188,13 @@ def remove_read_permission(path: str | os.PathLike) -> None:
 
 def add_read_permission(path: str | os.PathLike) -> None:
     """
-    change users permissions to a path to write only
+    restore read permission on a path
+
+    On Windows this clears every deny entry the helpers set on the path, not
+    only the read one.
     """
     if os.name == "nt":
-        _allow(path)
+        _clear_deny(path)
         return
     mode = os.stat(path)[stat.ST_MODE]
     os.chmod(path, mode | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
@@ -200,10 +202,11 @@ def add_read_permission(path: str | os.PathLike) -> None:
 
 def remove_write_permission(path: str | os.PathLike) -> None:
     """
-    change users permissions to a path to read only
+    remove write permission from a path
     """
     if os.name == "nt":
-        _deny(path, "WD")
+        # write data adds a file; append data adds a subdirectory
+        _deny(path, "WD,AD")
         return
     mode = os.stat(path)[stat.ST_MODE]
     os.chmod(path, mode & ~stat.S_IWUSR & ~stat.S_IWGRP & ~stat.S_IWOTH)
@@ -211,7 +214,7 @@ def remove_write_permission(path: str | os.PathLike) -> None:
 
 def remove_execute_permission(path: str | os.PathLike) -> None:
     """
-    change users permissions to a path to read only
+    remove execute (directory traverse) permission from a path
     """
     if os.name == "nt":
         _deny(path, "X")

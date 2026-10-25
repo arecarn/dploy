@@ -40,17 +40,31 @@ keeps no runtime dependencies.
 
 ## Consequences
 
-- The Windows permission code is about 100 lines of `ctypes` that only
-  `windows-latest` CI exercises. Wrong struct layouts fail there, not on
-  Linux. Tests in `tests/test_utils.py` deny access with real ACL entries
-  through `icacls`.
+- The Windows permission code is one `ctypes` module that only `windows-latest`
+  CI exercises. Wrong struct layouts fail there, not on Linux. Tests in
+  `tests/test_utils.py` deny access with real ACL entries through `icacls`.
 - The check is a point-in-time answer. A permission changed between the two
   passes can still fail execution, on every platform.
-- Traverse (`is_directory_executable`) will nearly always pass on Windows, as
-  users hold the "bypass traverse checking" privilege that `AccessCheck`
-  does not model. The OS bypasses the same check, so the answer matches the
-  operation.
+- A path that cannot be examined (missing, bad name, no ACL support) counts as
+  not accessible, as with `os.access`. Failures of the token or `AccessCheck`
+  calls raise `OSError`, because the answer is then unknown rather than "no".
+- A writable directory needs both the add-file and the add-subdirectory right,
+  because stow creates files, directories and directory links. Removing an
+  entry is not checked: it depends on `DELETE` on the entry itself, which the
+  parent's ACL does not show.
+- The execute (traverse) check is stricter than the OS. Users hold the
+  "bypass traverse checking" privilege, which `AccessCheck` does not model, so
+  the OS reaches through a directory whose traverse right is denied. dploy
+  refuses it instead, because the ACL says no. A refusal in the collect pass
+  never breaks the all-or-nothing promise; only a failure in the execute pass
+  would.
+- `AccessCheck` ignores privileges such as backup and restore, so an elevated
+  user can be refused where the OS would allow the open. This is the same kind
+  of stricter answer.
 - The permission tests run on Windows. Their `remove_*_permission` helpers set
   a deny entry with `icacls` there, and teardown clears them first. Three
   tests stay skipped because they need the OS itself to refuse traversal,
   which the bypass above prevents (`skip_on_windows_traverse_bypass`).
+- Each check opens and duplicates a process token. This is not cached because
+  the cost is small next to the file system calls; cache it if profiling says
+  otherwise.
