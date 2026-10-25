@@ -129,6 +129,8 @@ def test_exists_or_raise_permission_error_without_permission(dest: Any) -> None:
     [
         ("RD", utils.is_directory_readable),
         ("WD", utils.is_directory_writable),
+        # creating a subdirectory or a directory symlink needs a separate right
+        ("AD", utils.is_directory_writable),
         ("X", utils.is_directory_executable),
     ],
 )
@@ -208,3 +210,14 @@ def test_missing_path_is_not_accessible(tmp_path: pathlib.Path) -> None:
     # os.access answers False for a path that does not exist, not an error
     assert not utils.is_directory_readable(tmp_path / "missing")
     assert not utils.is_file_writable(tmp_path / "missing")
+
+
+@tests_utils.only_on_windows
+def test_unexaminable_path_is_not_accessible(tmp_path: pathlib.Path) -> None:
+    # os.access answers False for a path it cannot examine, whatever the reason,
+    # so the collect pass reports it instead of crashing with a raw OSError
+    a_file = tmp_path / "file"
+    a_file.touch()
+    for path in (tmp_path / "bad*name", a_file / "child"):
+        assert not utils.is_directory_readable(path)
+        assert not utils.is_file_writable(path)
