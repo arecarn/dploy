@@ -81,3 +81,8 @@ disable = [
 
 [tool.pylint.REPORTS]
 reports = "no"
+
+[tool.ty.environment]
+# dploy/_winaccess.py uses ctypes.WinDLL, which only exists on Windows, and
+# lint runs on every OS in CI. "all" checks platform-specific code everywhere.
+python-platform = "all"

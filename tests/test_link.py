@@ -44,7 +44,6 @@ def test_link_with_non_existant_dest(source_a: Any) -> None:
         dploy.link(source_a, os.path.join(non_existant_dest, "source_a_link"))
 
 
-@utils.skip_on_windows_permissions
 def test_link_with_read_only_dest(file_a: Any, dest: Any) -> None:
     dest_file = os.path.join(dest, "file_a_link")
     utils.remove_write_permission(dest)
@@ -57,7 +56,6 @@ def test_link_with_read_only_dest(file_a: Any, dest: Any) -> None:
         dploy.link(file_a, dest_file)
 
 
-@utils.skip_on_windows_permissions
 def test_link_with_write_only_source(file_a: Any, dest: Any) -> None:
     dest_file = os.path.join(dest, "file_a_link")
     utils.remove_read_permission(file_a)

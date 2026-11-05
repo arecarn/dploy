@@ -107,7 +107,6 @@ def test_clean_is_a_no_op_on_a_dry_run(source_only_files: Any, dest: Any) -> Non
     assert os.path.islink(dest_path)
 
 
-@pytest.mark.skipif(os.name == "nt", reason="os.chmod has limited effect on Windows")
 def test_clean_reports_an_unreadable_subdirectory(
     source_only_files: Any, dest: Any
 ) -> None:
