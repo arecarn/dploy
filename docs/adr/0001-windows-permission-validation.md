@@ -58,9 +58,6 @@ keeps no runtime dependencies.
   refuses it instead, because the ACL says no. A refusal in the collect pass
   never breaks the all-or-nothing promise; only a failure in the execute pass
   would.
-- `AccessCheck` ignores privileges such as backup and restore, so an elevated
-  user can be refused where the OS would allow the open. This is the same kind
-  of stricter answer.
 - The permission tests run on Windows. Their `remove_*_permission` helpers set
   a deny entry with `icacls` there, and teardown clears them first. Three
   tests stay skipped because they need the OS itself to refuse traversal,
