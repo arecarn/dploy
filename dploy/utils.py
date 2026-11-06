@@ -162,6 +162,26 @@ def is_directory_executable(directory: Path) -> bool:
     return _has_access(directory, os.X_OK, _FILE_EXECUTE)
 
 
+_EXTENDED_LENGTH_PREFIX = "\\\\?\\"
+_EXTENDED_LENGTH_UNC_PREFIX = "\\\\?\\UNC\\"
+
+
+def strip_extended_length_prefix(target: str) -> str:
+    """
+    remove the Windows extended-length prefix from a path string
+
+    os.readlink returns junction and symlink targets as \\\\?\\C:\\dir or
+    \\\\?\\UNC\\server\\share. Left in, the prefix never compares equal to the
+    same path written without it. A string without the prefix is returned
+    unchanged.
+    """
+    if target.startswith(_EXTENDED_LENGTH_UNC_PREFIX):
+        return "\\\\" + target[len(_EXTENDED_LENGTH_UNC_PREFIX) :]
+    if target.startswith(_EXTENDED_LENGTH_PREFIX):
+        return target[len(_EXTENDED_LENGTH_PREFIX) :]
+    return target
+
+
 def readlink(path: Path, absolute_target: bool = False) -> Path:
     """
     get the target of a symbolic link passed as a pathlib.Path object and
@@ -176,6 +196,10 @@ def readlink(path: Path, absolute_target: bool = False) -> Path:
 
     """
     link_target = os.readlink(str(path))
+    # Strip before the normpath below, which would otherwise treat the prefix
+    # as part of the path. POSIX filenames may legally start with a backslash.
+    if os.name == "nt":
+        link_target = strip_extended_length_prefix(link_target)
     path_dir = os.path.dirname(str(path))
     if absolute_target:
         if not os.path.isabs(link_target):

@@ -36,6 +36,9 @@ organized by order of importance.
 
 - On Windows, a link to a directory is now created as a directory symlink
   instead of a file symlink, which did not work.
+- On Windows, existing links are now recognized as pointing at their
+  package. Windows reports link targets with a `\\?\` prefix, which made
+  every comparison with the package path fail.
 - On Windows, permission checks now read the file's ACL instead of only the
   read-only flag, so an unreadable or unwritable path is reported before
   anything changes rather than raising `PermissionError` part way through.

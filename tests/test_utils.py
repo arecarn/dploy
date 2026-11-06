@@ -61,10 +61,20 @@ def test_readlink_with_relative_target(dest: Any, source_a: Any) -> None:
     assert utils.readlink(dest_path, absolute_target=True).exists()
 
 
-@pytest.mark.skipif(
-    os.name == "nt",
-    reason="#27: os.readlink returns a \\\\?\\ extended-length path on Windows",
+@pytest.mark.parametrize(
+    ("target", "expected"),
+    [
+        ("\\\\?\\C:\\source\\aaa", "C:\\source\\aaa"),
+        ("\\\\?\\UNC\\server\\share\\aaa", "\\\\server\\share\\aaa"),
+        ("C:\\source\\aaa", "C:\\source\\aaa"),
+        ("..\\source\\aaa", "..\\source\\aaa"),
+        ("/source/aaa", "/source/aaa"),
+    ],
 )
+def test_strip_extended_length_prefix(target: str, expected: str) -> None:
+    assert utils.strip_extended_length_prefix(target) == expected
+
+
 def test_readlink_with_absolute_target(dest: Any, source_a: Any) -> None:
     target = os.path.join(source_a, "aaa")
     dest_path = os.path.join(dest, "bbb")
