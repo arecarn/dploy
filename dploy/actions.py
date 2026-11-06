@@ -103,7 +103,10 @@ class SymbolicLink(AbstractBaseAction):
         self.path = path
 
     def execute(self) -> None:
-        self.path.symlink_to(self.source_relative)
+        # Windows has distinct directory and file symlinks; POSIX ignores this.
+        self.path.symlink_to(
+            self.source_relative, target_is_directory=self.source.is_dir()
+        )
 
     def __repr__(self) -> str:
         return f"dploy {self.subcmd}: link {self.path} => {self.source_relative}"

@@ -5,6 +5,7 @@ Tests for the link sub command
 from __future__ import annotations
 
 import os
+import pathlib
 import re
 from typing import TYPE_CHECKING
 
@@ -72,3 +73,38 @@ def test_link_with_conflicting_broken_link_at_dest(file_a: Any, dest: Any) -> No
     )
     with pytest.raises(error.ConflictsWithExistingLink, match=re.escape(message)):
         dploy.link(file_a, dest_file)
+
+
+def _record_symlink_to(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, bool]]:
+    """
+    record the keyword arguments of every Path.symlink_to call
+
+    target_is_directory is ignored on POSIX, so the call itself is the only
+    thing a POSIX run can check. On Windows a directory link made without it
+    is a broken file symlink.
+    """
+    calls: list[dict[str, bool]] = []
+    real_symlink_to = pathlib.Path.symlink_to
+
+    def recording_symlink_to(self: pathlib.Path, target: Any, **kwargs: bool) -> None:
+        calls.append(kwargs)
+        real_symlink_to(self, target, **kwargs)
+
+    monkeypatch.setattr(pathlib.Path, "symlink_to", recording_symlink_to)
+    return calls
+
+
+def test_link_creates_directory_symlink_as_directory(
+    source_a: Any, dest: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls = _record_symlink_to(monkeypatch)
+    dploy.link(source_a, os.path.join(dest, "source_a_link"))
+    assert calls == [{"target_is_directory": True}]
+
+
+def test_link_creates_file_symlink_as_file(
+    file_a: Any, dest: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls = _record_symlink_to(monkeypatch)
+    dploy.link(file_a, os.path.join(dest, "file_a_link"))
+    assert calls == [{"target_is_directory": False}]
