@@ -54,7 +54,7 @@ class Ignore:
         if pattern not in self._root_glob_cache:
             try:
                 self._root_glob_cache[pattern] = list(self.root.glob(pattern))
-            except IndexError:  # the glob result was empty
+            except (IndexError, ValueError):  # empty glob, or pattern rejected
                 self._root_glob_cache[pattern] = []
         return self._root_glob_cache[pattern]
 
@@ -71,7 +71,7 @@ class Ignore:
                 files = sorted(
                     set(source.parent.glob(pattern)) | set(self._root_glob(pattern))
                 )
-            except IndexError:  # the glob result was empty
+            except (IndexError, ValueError):  # empty glob, or pattern rejected
                 continue
 
             for file in files:

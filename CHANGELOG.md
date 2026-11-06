@@ -42,6 +42,9 @@ organized by order of importance.
 - On Windows, dploy now decides whether two paths are the same file by asking
   the file system instead of comparing path text, so a different spelling of
   one path (letter case, short names) no longer counts as a different file.
+- An ignore pattern the file system rejects, which Windows does for some
+  patterns POSIX accepts, is now skipped instead of crashing stow, unstow
+  and clean.
 - On Windows, permission checks now read the file's ACL instead of only the
   read-only flag, so an unreadable or unwritable path is reported before
   anything changes rather than raising `PermissionError` part way through.
