@@ -39,6 +39,9 @@ organized by order of importance.
 - On Windows, existing links are now recognized as pointing at their
   package. Windows reports link targets with a `\\?\` prefix, which made
   every comparison with the package path fail.
+- On Windows, dploy now decides whether two paths are the same file by asking
+  the file system instead of comparing path text, so a different spelling of
+  one path (letter case, short names) no longer counts as a different file.
 - On Windows, permission checks now read the file's ACL instead of only the
   read-only flag, so an unreadable or unwritable path is reported before
   anything changes rather than raising `PermissionError` part way through.

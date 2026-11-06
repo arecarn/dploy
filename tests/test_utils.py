@@ -94,6 +94,44 @@ def test_is_same_files_ignores_order(dest: Any) -> None:
     assert not utils.is_same_files([file_a], [file_a, file_b])
 
 
+def test_is_same_files_pairs_each_file_once(dest: Any) -> None:
+    file_a = pathlib.Path(dest) / "aaa"
+    file_b = pathlib.Path(dest) / "bbb"
+    file_a.touch()
+    file_b.touch()
+    assert not utils.is_same_files([file_a, file_a], [file_a, file_b])
+    assert not utils.is_same_files([file_a, file_b], [file_a, file_a])
+    assert utils.is_same_files([], [])
+
+
+def test_is_same_file_compares_identity_not_path(dest: Any) -> None:
+    # Two hard links are different resolved paths but one file. This stands in
+    # for Windows, where case or 8.3 names give one file several paths.
+    file_a = pathlib.Path(dest) / "aaa"
+    file_b = pathlib.Path(dest) / "bbb"
+    file_a.touch()
+    os.link(file_a, file_b)
+    assert utils.is_same_file(file_a, file_b)
+
+
+@pytest.mark.skipif(os.name != "nt", reason="needs a case-insensitive file system")
+def test_is_same_file_ignores_path_case(dest: Any) -> None:
+    file_a = pathlib.Path(dest) / "aaa"
+    file_a.touch()
+    assert utils.is_same_file(file_a, pathlib.Path(dest) / "AAA")
+
+
+def test_is_same_file_with_dangling_links(dest: Any) -> None:
+    link_a = pathlib.Path(dest) / "link_a"
+    link_b = pathlib.Path(dest) / "link_b"
+    link_c = pathlib.Path(dest) / "link_c"
+    link_a.symlink_to("missing")
+    link_b.symlink_to("missing")
+    link_c.symlink_to("other_missing")
+    assert utils.is_same_file(link_a, link_b)
+    assert not utils.is_same_file(link_a, link_c)
+
+
 def test_exists_or_raise_permission_error_with_existing_path(dest: Any) -> None:
     assert utils.exists_or_raise_permission_error(pathlib.Path(dest))
 
