@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 @pytest.mark.skipif(
     os.name == "nt",
     reason=(
-        "#27: a drive-relative target like /source/bbb comes back from "
+        "#51: a drive-relative target like /source/bbb comes back from "
         "os.readlink with the current drive prepended on Windows"
     ),
 )
