@@ -216,3 +216,13 @@ def test_ignore_file_with_blank_line_does_not_crash_unstow(
         file.write("\n")
     dploy.unstow([source_a], dest)
     assert not os.path.exists(os.path.join(dest, "aaa"))
+
+
+def test_ignore_pattern_the_file_system_rejects_is_skipped(
+    source_a: Any, dest: Any
+) -> None:
+    # A null byte makes glob raise ValueError on POSIX, as other malformed
+    # patterns do on Windows. It matches nothing, so it is skipped.
+    dploy.stow([source_a], dest, ignore_patterns=["a\0b", "bbb"])
+    assert os.path.exists(os.path.join(dest, "aaa", "aaa"))
+    assert not os.path.exists(os.path.join(dest, "aaa", "bbb"))

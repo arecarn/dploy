@@ -58,19 +58,36 @@ def is_same_file(file1: Path, file2: Path) -> bool:
     """
     test if two pathlib.Path() objects are the same file
 
-    TODO: consider using pathlib.Path.samefile() instead
-    NOTE: this can raise exception FileNotFoundError
+    Compares file identity (Path.samefile) rather than resolved path strings,
+    because on Windows resolve() can spell one file differently (case, 8.3
+    short names). Identity needs both files to exist, so when either is
+    missing, such as a dangling link, this falls back to comparing the
+    resolved paths. As a side effect two hard links to one file are the same.
     """
-    return file1.resolve() == file2.resolve()
+    try:
+        return file1.samefile(file2)
+    except OSError:
+        return file1.resolve() == file2.resolve()
 
 
 def is_same_files(files1: Sequence[Path], files2: Sequence[Path]) -> bool:
     """
     test if two collection of files are equivalent, regardless of order
+
+    Each file in files1 must pair with a distinct file in files2 (see
+    is_same_file), so collections of different lengths are never equivalent.
     """
-    files1_resolved = sorted(f.resolve() for f in files1)
-    files2_resolved = sorted(f.resolve() for f in files2)
-    return files1_resolved == files2_resolved
+    if len(files1) != len(files2):
+        return False
+    unmatched = list(files2)
+    for file1 in files1:
+        for candidate in unmatched:
+            if is_same_file(file1, candidate):
+                unmatched.remove(candidate)
+                break
+        else:
+            return False
+    return True
 
 
 def get_absolute_path(file: str | Path) -> Path:
@@ -162,6 +179,26 @@ def is_directory_executable(directory: Path) -> bool:
     return _has_access(directory, os.X_OK, _FILE_EXECUTE)
 
 
+_EXTENDED_LENGTH_PREFIX = "\\\\?\\"
+_EXTENDED_LENGTH_UNC_PREFIX = "\\\\?\\UNC\\"
+
+
+def strip_extended_length_prefix(target: str) -> str:
+    """
+    remove the Windows extended-length prefix from a path string
+
+    os.readlink returns junction and symlink targets as \\\\?\\C:\\dir or
+    \\\\?\\UNC\\server\\share. Left in, the prefix never compares equal to the
+    same path written without it. A string without the prefix is returned
+    unchanged.
+    """
+    if target.startswith(_EXTENDED_LENGTH_UNC_PREFIX):
+        return "\\\\" + target[len(_EXTENDED_LENGTH_UNC_PREFIX) :]
+    if target.startswith(_EXTENDED_LENGTH_PREFIX):
+        return target[len(_EXTENDED_LENGTH_PREFIX) :]
+    return target
+
+
 def readlink(path: Path, absolute_target: bool = False) -> Path:
     """
     get the target of a symbolic link passed as a pathlib.Path object and
@@ -176,6 +213,10 @@ def readlink(path: Path, absolute_target: bool = False) -> Path:
 
     """
     link_target = os.readlink(str(path))
+    # Strip before the normpath below, which would otherwise treat the prefix
+    # as part of the path. POSIX filenames may legally start with a backslash.
+    if os.name == "nt":
+        link_target = strip_extended_length_prefix(link_target)
     path_dir = os.path.dirname(str(path))
     if absolute_target:
         if not os.path.isabs(link_target):
