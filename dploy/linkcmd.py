@@ -83,6 +83,12 @@ class LinkInput(main.Input):
             )
             return False
 
+        if not destination.parent.is_dir():
+            self.errors.add(
+                error.NoSuchDirectoryToSubcmdInto(self.subcmd, destination.parent)
+            )
+            return False
+
         if not utils.is_file_writable(
             destination.parent
         ) or not utils.is_directory_writable(destination.parent):
