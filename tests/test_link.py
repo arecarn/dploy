@@ -108,3 +108,14 @@ def test_link_creates_file_symlink_as_file(
     calls = _record_symlink_to(monkeypatch)
     dploy.link(file_a, os.path.join(dest, "file_a_link"))
     assert calls == [{"target_is_directory": False}]
+
+
+def test_link_with_file_as_dest_parent(file_a: Any, tmpdir: Any) -> None:
+    not_a_dir = tmpdir.join("not_a_dir")
+    not_a_dir.write("I am a file, not a directory")
+    dest_file = os.path.join(str(not_a_dir), "file_a_link")
+    message = str(
+        error.NoSuchDirectoryToSubcmdInto(subcmd=SUBCMD, file=str(not_a_dir))
+    )
+    with pytest.raises(error.NoSuchDirectoryToSubcmdInto, match=re.escape(message)):
+        dploy.link(file_a, dest_file)
