@@ -63,6 +63,8 @@ organized by order of importance.
   it could not match a link to its package unless the package sat directly in
   the working directory and the link's target had no `..` in it. An unreadable
   directory is now reported as an error instead of crashing.
+- `link` now reports a clean error when the destination's parent is a file
+  instead of a directory. It previously crashed with a traceback.
 
 ## [0.1.3] - 2026-02-13
 
