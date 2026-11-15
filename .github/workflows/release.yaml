@@ -1,0 +1,50 @@
+name: Release
+
+# Publishes to PyPI when a version tag is pushed, for example:
+#   git tag 0.2.0 && git push origin 0.2.0
+# The package version comes from the tag (hatch-vcs), so there is no version
+# to edit by hand. Before tagging, set the date in CHANGELOG.md.
+#
+# One-time setup on PyPI: add this repository and workflow (release.yaml) as a
+# trusted publisher for the project, with the environment name "pypi".
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+*"
+
+jobs:
+  build:
+    name: Build distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # hatch-vcs reads the version from tags, so it needs the full history.
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Build
+        run: uv build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write # required for PyPI trusted publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1

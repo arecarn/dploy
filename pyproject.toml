@@ -18,7 +18,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "Topic :: Utilities",
 ]
-version = "0.2.0"
+dynamic = ["version"]
 dependencies = []
 
 [project.urls]
@@ -42,8 +42,13 @@ dev = [
 ]
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
+
+# The version comes from the latest git tag (for example `0.2.0`), so a release
+# is made by pushing a tag. See .github/workflows/release.yaml.
+[tool.hatch.version]
+source = "vcs"
 
 [tool.ruff]
 # Match black's default line length
