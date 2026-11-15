@@ -19,6 +19,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # hatch-vcs reads the version from tags, so it needs the full history.
+          fetch-depth: 0
 
       - name: Enable symlinks on Windows
         if: runner.os == 'Windows'
