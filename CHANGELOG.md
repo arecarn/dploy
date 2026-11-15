@@ -6,7 +6,7 @@ All changes documented here should be written with the goal give the end-user
 (not other developers) a summarized view of the changes since the last release,
 organized by order of importance.
 
-## [0.2.0] - Unreleased
+## [0.2.0] - 2026-11-14
 
 ### Added
 
